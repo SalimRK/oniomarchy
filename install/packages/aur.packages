@@ -21,6 +21,16 @@ responder
 eyewitness-git
 faraday-bin
 cutycapt-qt5-git
+supersdr
+dump1090-git
+cubicsdr
+sdrangel-bin
+
+# sdrpp-git is deliberately excluded — currently broken. Its makedepends
+# unconditionally builds every optional SDR backend (_plugindeps), one of
+# which is libsdrplay, whose PKGBUILD downloads a vendor .run installer
+# from sdrplay.com that now 404s. Blocks the whole AUR batch if left in;
+# see notes/pentest-tools.md "Gaps, currently broken" before re-adding.
 
 # recon-ng and autopsy are deliberately excluded — both have currently-
 # broken AUR PKGBUILDs (unresolvable deps: python-flasgger has no AUR

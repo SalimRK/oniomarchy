@@ -68,6 +68,23 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
     echo "==> [trigger/menu] ncat not available — skipping trigger.pentest.revshell entry" >&2
   fi
 
+  # Quick HTTP file server: prompts for a directory (blank = $HOME) and a
+  # port (blank = 8000, python's own default), then opens a terminal running
+  # python3 -m http.server from that directory. Uses python3 explicitly
+  # (not python) since this machine's mise shim sits ahead of system python
+  # on PATH — see CLAUDE.md's mise note — and python3 is unaffected.
+  # Foreground in the terminal like revshell: closing the window kills the
+  # server, nothing lingers as a background daemon.
+  if command -v python3 >/dev/null 2>&1; then
+    oniomarchy_httpserver_icon=$(printf '%b' '\UF019')
+    oniomarchy_httpserver_action='dir=$(omarchy-menu-input "Directory (blank = home)") && dir="${dir:-$HOME}" && port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "cd \"$dir\" && python3 -m http.server $port; exec bash"'
+    printf '  "trigger.pentest.http-server": {"icon":"%s","label":"HTTP File Server","action":"%s"},\n' \
+      "$(oniomarchy_jesc "$oniomarchy_httpserver_icon")" \
+      "$(oniomarchy_jesc "$oniomarchy_httpserver_action")"
+  else
+    echo "==> [trigger/menu] python3 not available — skipping trigger.pentest.http-server entry" >&2
+  fi
+
   echo "  // END oniomarchy trigger menu"
 } > "$oniomarchy_block_file"
 

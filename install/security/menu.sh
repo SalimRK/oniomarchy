@@ -28,6 +28,10 @@ oniomarchy_jesc() {
 # notes/install-layout.md) — reused, not invented. Root "security" first,
 # then one row per category in notes/pentest-tools.md's Menu Tree (AI Tools
 # omitted: no omarchy-pkg-installable tool in that category yet).
+# Software Defined Radio reuses Wireless Attacks' F16BE (Wi-Fi) glyph —
+# that source file has no dedicated radio/antenna icon, and reusing an
+# already-confirmed codepoint is the established pattern here (EB11 and
+# F06F3 are each already reused across two categories above).
 oniomarchy_security_submenus=(
   "security|EB11|Security"
   "security.infogather|F06F3|Information Gathering"
@@ -35,6 +39,7 @@ oniomarchy_security_submenus=(
   "security.web|F268|Web Application Analysis"
   "security.password|EB11|Password Attacks"
   "security.wireless|F16BE|Wireless Attacks"
+  "security.sdr|F16BE|Software Defined Radio"
   "security.re|EBA2|Reverse Engineering"
   "security.exploit|F16A1|Exploitation Tools"
   "security.sniff|F06F3|Sniffing & Spoofing"

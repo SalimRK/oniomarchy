@@ -14,8 +14,17 @@
 # verify-units.sh confirms package + each listed unit file actually exist
 # (pacman -Q / pacman -Ql) before a row is allowed into the generated menu —
 # nothing here is trusted blind.
-sshd	SSH (Remote Login)	openssh	yes	sshd.service
-samba	SMB Fileserver (Loot Hosting)	samba	no	smb.service	nmb.service
-vsftpd	FTP (Payload/Exfil)	vsftpd	no	vsftpd.service
-postgresql	PostgreSQL (Metasploit DB)	postgresql	no	postgresql.service
-xrdp	RDP (Remote Desktop)	xrdp	yes	xrdp.service	xrdp-sesman.service
+#
+# samba (SMB Fileserver) and vsftpd (FTP) were removed 2026-08-27 — dropped
+# entirely rather than kept as toggleable services, per user decision.
+#
+# postgresql was briefly labeled "Metasploit" 2026-08-27, then corrected to
+# "Database" the same day: this row only toggles postgresql.service itself,
+# not Metasploit (which has no systemd unit — msfconsole is run directly,
+# and msfrpcd, its optional RPC daemon, isn't wired up here). Parrot OS's
+# own System Services menu keeps these as two separate entries for the same
+# reason — see notes/pentest-tools.md / CLAUDE.md if a real Metasploit
+# (msfrpcd) toggle gets added later.
+sshd	SSH	openssh	yes	sshd.service
+xrdp	RDP	xrdp	yes	xrdp.service	xrdp-sesman.service
+postgresql	Database	postgresql	no	postgresql.service
