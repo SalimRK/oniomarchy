@@ -1,0 +1,21 @@
+# Real service definitions for Oniomarchy's Trigger > Pentest > Services
+# menu. Columns (tab-separated): id<TAB>label<TAB>package<TAB>confirm<TAB>unit1<TAB>unit2
+# unit2 is optional (leave blank if the service is a single unit).
+#
+# id becomes trigger.pentest.services.<id>[.start|.stop|.restart].
+# label is purpose-based (what the service is actually used for on this
+# machine), not the raw package/unit name, per user request.
+# confirm: yes = gate Start/Restart behind a gum-confirm prompt in a real
+#          terminal (CLAUDE.md's confirm-before-enable rule — SSH/RDP open
+#          remote-access attack surface); no = silent pkexec action, no
+#          terminal, matching trigger.pentest.mac-randomize.
+#          Stop never confirms either way.
+#
+# verify-units.sh confirms package + each listed unit file actually exist
+# (pacman -Q / pacman -Ql) before a row is allowed into the generated menu —
+# nothing here is trusted blind.
+sshd	SSH (Remote Login)	openssh	yes	sshd.service
+samba	SMB Fileserver (Loot Hosting)	samba	no	smb.service	nmb.service
+vsftpd	FTP (Payload/Exfil)	vsftpd	no	vsftpd.service
+postgresql	PostgreSQL (Metasploit DB)	postgresql	no	postgresql.service
+xrdp	RDP (Remote Desktop)	xrdp	yes	xrdp.service	xrdp-sesman.service

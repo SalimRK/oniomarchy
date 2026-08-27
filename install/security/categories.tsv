@@ -1,0 +1,87 @@
+# Category assignment for Oniomarchy's Security Tools menu.
+# Columns: package<TAB>category_id<TAB>mode<TAB>extra  (exactly one tab between fields)
+#
+# category_id matches the security.<id> submenu ids defined in menu.sh.
+# mode:
+#   auto     - discover real binaries via pacman -Ql at run time. 1 binary
+#              -> single entry, 2+ -> subcategory listing every binary.
+#              Any binary that matches a real installed .desktop Exec
+#              target still gets its own entry here (the Security menu is
+#              a complete category view, not deduped against Apps — user
+#              call, 2026-08-25) but launches directly instead of through
+#              a terminal wrapper, since it's already a GUI app.
+#   skip     - package isn't installed yet, or is a broken/excluded
+#              package (notes/pentest-tools.md Gaps) — no security.*
+#              entry generated (no guessing at binaries for something
+#              that isn't there).
+#   collapse - force a single entry running just `extra`, ignoring the
+#              package's other binaries (used for john/hashcat, whose
+#              *2john/*2hashcat helper scripts would otherwise add ~170
+#              rows of rarely-used format converters — see
+#              notes/install-layout.md decision log for this and the
+#              other menu-scale calls).
+#   data     - non-executable data package; single entry opens `extra`
+#              (a real directory, confirmed via pacman -Ql) in the file
+#              manager instead of running anything.
+#   collapse - force a single entry running just `extra`, ignoring the
+#              package's other binaries (used for john/hashcat, whose
+#              *2john/*2hashcat helper scripts would otherwise add ~170
+#              rows of rarely-used format converters — see
+#              notes/install-layout.md decision log for this and the
+#              other menu-scale calls).
+#   data     - non-executable data package; single entry opens `extra`
+#              (a real directory, confirmed via pacman -Ql) in the file
+#              manager instead of running anything.
+#
+# Kept in sync with notes/pentest-tools.md's Menu Tree by hand.
+nmap	infogather	auto	-
+masscan	infogather	auto	-
+gobuster	infogather	auto	-
+ffuf	infogather	auto	-
+dirb	infogather	auto	-
+maltego	infogather	auto	-
+theharvester-git	infogather	auto	-
+sherlock	infogather	auto	-
+nikto	vuln	auto	-
+sqlmap	web	auto	-
+wpscan	web	auto	-
+burpsuite	web	auto	-
+caido-desktop	web	auto	-
+wfuzz	web	auto	-
+john	password	collapse	john
+hydra	password	auto	-
+hashcat	password	collapse	hashcat
+wordlists	password	data	/usr/share/wordlists
+rockyou	password	data	/usr/share/dict
+seclists	password	data	/usr/share/doc/seclists
+aircrack-ng	wireless	auto	-
+wifite	wireless	auto	-
+ghidra	re	auto	-
+radare2	re	auto	-
+jadx	re	auto	-
+android-apktool-bin	re	auto	-
+binwalk	re	auto	-
+metasploit	exploit	auto	-
+routersploit	exploit	auto	-
+armitage-git	exploit	auto	-
+beef-xss	exploit	collapse	beef
+exploitdb	exploit	auto	-
+wireshark-qt	sniff	auto	-
+ettercap	sniff	auto	-
+bettercap	sniff	auto	-
+responder	sniff	auto	-
+impacket	postex	auto	-
+sliver	postex	auto	-
+powershell-empire-git	postex	auto	-
+volatility3	forensics	auto	-
+sleuthkit	forensics	auto	-
+testdisk	forensics	auto	-
+perl-image-exiftool	forensics	auto	-
+steghide	forensics	auto	-
+cherrytree	reporting	auto	-
+eyewitness-git	reporting	auto	-
+faraday-bin	reporting	auto	-
+cutycapt-qt5-git	reporting	auto	-
+social-engineer-toolkit	social	auto	-
+can-utils	automotive	auto	-
+savvycan	automotive	auto	-

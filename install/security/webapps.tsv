@@ -1,0 +1,42 @@
+# Security webapps for Oniomarchy's Security > Webapps menu.
+# Columns: id_slug<TAB>label<TAB>url<TAB>tactic<TAB>icon  (exactly one tab between fields)
+#
+# id_slug   - reserved for the future security.webapps.<id_slug> jsonc id
+#             once menu.sh is extended to read this file (not built yet —
+#             install-webapps.sh only uses label/url/icon today).
+# label     - passed as-is to `omarchy webapp install <label> <url> <icon>`
+#             — becomes both the .desktop filename and its Name= (and
+#             thus the launcher-visible label).
+# url       - the webapp's URL.
+# tactic    - which tactic category (same ids as categories.tsv) this
+#             webapp maps to — doc-reference only, does NOT place it in
+#             that category's submenu. See "Decision: Webapps get their
+#             own menu" in notes/pentest-tools.md for why they're grouped
+#             together under security.webapps instead of scattered by
+#             tactic like everything in categories.tsv is.
+# icon      - "-" (the default) means auto-fetch: install-webapps.sh
+#             passes an empty 3rd arg, which triggers
+#             omarchy-webapp-install's own favicon fetch (apple-touch-icon
+#             -> well-known path -> Google favicon proxy). Any other value
+#             is passed straight through as ICON_REF (a URL, a local file
+#             path, or a bundled/system icon theme name) — used when a
+#             site has no auto-fetchable icon at all. See "Gaps" note in
+#             notes/pentest-tools.md for why osint-framework needs one.
+#
+# Kept in sync with notes/pentest-tools.md's "Webapps" table by hand.
+revshells	revshells.com	https://www.revshells.com/	exploit	-
+shodan	Shodan	https://www.shodan.io/	infogather	-
+exploit-db	Exploit-DB	https://www.exploit-db.com/	exploit	-
+attack-navigator	ATT&CK Navigator	https://mitre-attack.github.io/attack-navigator/	reporting	-
+gtfobins	GTFOBins	https://gtfobins.org/	postex	-
+lolbas	LOLBAS	https://lolbas-project.github.io/	postex	-
+censys	Censys	https://search.censys.io/	infogather	-
+virustotal	VirusTotal	https://www.virustotal.com/gui/home/upload	forensics	-
+hibp	Have I Been Pwned	https://haveibeenpwned.com/	infogather	-
+pimeyes	PimEyes	https://pimeyes.com/en	infogather	-
+ssllabs	SSL Labs	https://www.ssllabs.com/ssltest/	web	-
+urlscan	urlscan.io	https://urlscan.io/	infogather	-
+wigle	WiGLE	https://wigle.net/	wireless	-
+anyrun	any.run	https://any.run/	forensics	-
+osint-framework	OSINT Framework	https://osintframework.com/	infogather	applications-internet
+cyberchef	CyberChef	https://cyberchef.org/	re	-

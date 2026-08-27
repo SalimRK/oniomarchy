@@ -1,0 +1,7 @@
+run_step "$ONIOMARCHY_INSTALL/packages/official.sh"
+run_step "$ONIOMARCHY_INSTALL/packages/aur-patches.sh"
+run_step "$ONIOMARCHY_INSTALL/packages/aur.sh"
+run_step "$ONIOMARCHY_INSTALL/packages/aur-theharvester.sh"
+run_step "$ONIOMARCHY_INSTALL/packages/aur-armitage.sh"
+run_step "$ONIOMARCHY_INSTALL/packages/aur-sliver.sh"
+run_step "$ONIOMARCHY_INSTALL/packages/aur-powershell-empire.sh"

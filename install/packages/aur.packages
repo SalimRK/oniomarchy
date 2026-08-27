@@ -1,0 +1,47 @@
+# AUR packages for Oniomarchy Phase 1. Kept in sync with
+# notes/pentest-tools.md by hand.
+maltego
+wordlists
+rockyou
+seclists
+burpsuite
+android-apktool-bin
+caido-desktop
+ffuf
+dirb
+beef-xss
+sherlock
+steghide
+wfuzz
+xrdp
+social-engineer-toolkit
+can-utils
+savvycan
+responder
+eyewitness-git
+faraday-bin
+cutycapt-qt5-git
+
+# recon-ng and autopsy are deliberately excluded — both have currently-
+# broken AUR PKGBUILDs (unresolvable deps: python-flasgger has no AUR
+# package; java-openjfx=17 has aged out of the AUR). See
+# notes/pentest-tools.md "Gaps, currently broken" before re-adding either.
+
+# armitage-git, sliver, theharvester-git, and powershell-empire-git are
+# NOT in this list even though they're part of the toolkit — all four
+# need a build-scoped env var override (JDK 11, pinned Go toolchain, a
+# pinned flit_core via PYTHONPATH, a mise-PATH-clean poetry build) that
+# would be wrong to apply to the whole batch above. Installed by their
+# own leaf scripts instead: see install/packages/aur-armitage.sh,
+# aur-sliver.sh, aur-theharvester.sh, aur-powershell-empire.sh.
+
+# beef in the list above is beef-xss (the real Browser Exploitation
+# Framework) — a same-named-but-wrong AUR package called plain `beef` is
+# a Brainfuck interpreter, not a security tool. beef-xss's PKGBUILD
+# declares conflicts=('beef' 'beef-git'), so pacman/yay will prompt to
+# remove the wrong package as part of this install if it's already on
+# the system (confirmed via the real PKGBUILD, not guessed).
+
+# AI Tools category has no package here yet — hexstrike-ai and garak are
+# both git-clone/pip installs, not `omarchy pkg` targets. See
+# notes/pentest-tools.md "AI Tools" section before adding a venv/pipx step.
