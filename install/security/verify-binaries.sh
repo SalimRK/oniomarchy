@@ -21,14 +21,21 @@ for desktop_file in /usr/share/applications/*.desktop /opt/*/*.desktop; do
 done
 
 # Action for a given binary: direct launch (no terminal) if it's a known
-# GUI app via a real .desktop Exec= target, otherwise run once in a
-# terminal and hand off to an interactive shell.
+# GUI app via a real .desktop Exec= target, otherwise open a terminal
+# showing the tool's own usage and hand off to an interactive shell.
+#
+# CLI entries deliberately do NOT run the tool bare. Nearly every tool
+# here needs arguments, so a bare run just prints an error — and the ones
+# that touch raw sockets (bettercap, the aircrack-ng suite) die with
+# "Permission Denied" before showing anything useful. oniomarchy-tool-help
+# discovers the tool's real help flag at run time and prints that instead;
+# see install/security/tool-help.sh.
 oniomarchy_action_for() {
   local b="$1"
   if [[ -n ${oniomarchy_desktop_covered[$b]:-} ]]; then
     printf 'uwsm-app -- %s' "$b"
   else
-    printf "omarchy-launch-tui bash -c '%s; exec bash'" "$b"
+    printf "omarchy-launch-tui bash -c 'oniomarchy-tool-help %s; exec bash'" "$b"
   fi
 }
 
@@ -63,7 +70,7 @@ while IFS=$'\t' read -r pkg category mode extra; do
       ;;
     collapse)
       printf 'ENTRY\t%s\t-\t%s\t%s\t%s\t%s\n' \
-        "$category" "$extra" "$extra" "omarchy-launch-tui bash -c '$extra; exec bash'" "$pkg" \
+        "$category" "$extra" "$extra" "omarchy-launch-tui bash -c 'oniomarchy-tool-help $extra; exec bash'" "$pkg" \
         >> "$oniomarchy_security_generated"
       continue
       ;;
