@@ -1,4 +1,4 @@
-# wfuzz has two independent, already-diagnosed problems, both fixed here
+# wfuzz has three independent, already-diagnosed problems, all fixed here
 # rather than by the generic aur.sh batch:
 #
 # 1. It was originally installed (2026-08-25) before
@@ -35,6 +35,25 @@
 #    site-packages/python3.NN path, the same verify-don't-guess rule
 #    verify-binaries.sh follows for binary names. Idempotent: skipped if
 #    the patch marker is already present. See notes/install-issues.md.
+#
+# 3. wxfuzz (wfuzz's GUI entry point) fails separately even with fix #2
+#    applied: wfuzz/ui/gui/controller.py has three broken relative
+#    imports — genuine upstream bugs, confirmed by reading the real
+#    installed package tree, not guessed:
+#      - `from .ui.console.clparser import CLParser` — controller.py's
+#        own package is wfuzz.ui.gui, but clparser.py actually lives at
+#        wfuzz/ui/console/clparser.py, one level up then across, so this
+#        needs `..console.clparser`, not `.ui.console.clparser`.
+#      - `from .ui.gui.model import GUIModel` — model.py is a sibling of
+#        controller.py (wfuzz/ui/gui/model.py), so this just needs
+#        `.model`.
+#      - `from .facade import Facade` — facade.py lives at the top-level
+#        wfuzz/facade.py, two packages up from wfuzz.ui.gui, so this
+#        needs `...facade`.
+#    Looks like this GUI code path has never actually run against
+#    Python 3's relative-import semantics. Patched the same way as fix
+#    #2 (installed file, path via `pacman -Ql`, cached-PKGBUILD patching
+#    doesn't survive rebuilds here either).
 source "$ONIOMARCHY_INSTALL/packages/lib-clean-build-path.sh"
 
 yay -S --rebuild --noconfirm wfuzz
@@ -55,3 +74,18 @@ else
   echo "==> Patched $_file_func to use importlib.resources instead of pkg_resources"
 fi
 unset _file_func
+
+_controller=$(pacman -Ql wfuzz | awk '/wfuzz\/ui\/gui\/controller\.py$/ {print $2}')
+if [[ -z $_controller ]]; then
+  echo "oniomarchy: wfuzz's ui/gui/controller.py not found via pacman -Ql — package layout may have changed, wxfuzz relative-import patch skipped" >&2
+elif ! grep -q '^from \.ui\.console\.clparser import CLParser$' "$_controller"; then
+  echo "==> wxfuzz's relative-import patch already applied"
+else
+  sudo sed -i \
+    -e 's/^from \.ui\.console\.clparser import CLParser$/from ..console.clparser import CLParser/' \
+    -e 's/^from \.ui\.gui\.model import GUIModel$/from .model import GUIModel/' \
+    -e 's/^from \.facade import Facade$/from ...facade import Facade/' \
+    "$_controller"
+  echo "==> Patched $_controller's three broken relative imports (wxfuzz GUI mode)"
+fi
+unset _controller

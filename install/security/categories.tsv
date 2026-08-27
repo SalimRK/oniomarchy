@@ -93,6 +93,7 @@ volatility3	forensics	auto	-
 sleuthkit	forensics	auto	-
 testdisk	forensics	auto	-
 perl-image-exiftool	forensics	auto	-
+mat2	forensics	auto	-
 steghide	forensics	auto	-
 cherrytree	reporting	auto	-
 eyewitness-git	reporting	auto	-
