@@ -14,17 +14,26 @@ while IFS=$'\t' read -r id label package confirm unit1 unit2; do
   fi
 
   oniomarchy_units_ok=1
+  oniomarchy_clean_units=()
   for unit in "$unit1" "$unit2"; do
     [[ -z $unit ]] && continue
+    if [[ $unit == custom:* ]]; then
+      # Not package-owned — a unit file we author ourselves and install via
+      # install-scripts.sh (e.g. beef.service, since beef-xss ships no unit
+      # of its own). Trust it rather than checking pacman ownership.
+      oniomarchy_clean_units+=("${unit#custom:}")
+      continue
+    fi
     if ! pacman -Ql "$package" | grep -qE "/${unit}\$"; then
       echo "==> [services/verify-units] $package doesn't own $unit — skipping $id" >&2
       oniomarchy_units_ok=0
       break
     fi
+    oniomarchy_clean_units+=("$unit")
   done
   (( oniomarchy_units_ok )) || continue
 
-  printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$label" "$confirm" "$unit1" "$unit2" >> "$oniomarchy_services_generated"
+  printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$label" "$confirm" "${oniomarchy_clean_units[0]:-}" "${oniomarchy_clean_units[1]:-}" >> "$oniomarchy_services_generated"
 done < "$ONIOMARCHY_INSTALL/services/services.tsv"
 
 echo "==> Confirmed services written to $oniomarchy_services_generated"

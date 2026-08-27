@@ -76,7 +76,21 @@ while IFS=$'\t' read -r pkg category mode extra; do
   )
 
   if (( ${#oniomarchy_pkg_bins[@]} == 0 )); then
-    echo "==> [security/verify-binaries] $pkg: no binaries found under /usr/bin" >&2
+    # No /usr/bin binary at all (e.g. a script installed under /opt with
+    # only a .desktop launcher, like supersdr's Exec=/opt/supersdr/supersdr.py)
+    # — fall back to launching the package's own real .desktop file via
+    # gtk-launch (owned by gtk3, already part of the desktop stack) instead
+    # of silently dropping the package from the menu.
+    oniomarchy_pkg_desktop=$(pacman -Ql "$pkg" | awk '{print $2}' | grep '\.desktop$' | head -1)
+    if [[ -n $oniomarchy_pkg_desktop ]]; then
+      oniomarchy_desktop_id=$(basename "$oniomarchy_pkg_desktop")
+      oniomarchy_desktop_id="${oniomarchy_desktop_id%.desktop}"
+      printf 'ENTRY\t%s\t-\t%s\t%s\t%s\t%s\n' \
+        "$category" "$pkg" "$pkg" "uwsm-app -- gtk-launch $oniomarchy_desktop_id" "$pkg" \
+        >> "$oniomarchy_security_generated"
+    else
+      echo "==> [security/verify-binaries] $pkg: no /usr/bin binary and no .desktop file — skipping" >&2
+    fi
   elif (( ${#oniomarchy_pkg_bins[@]} == 1 )); then
     b="${oniomarchy_pkg_bins[0]}"
     id_slug="${b//./_}"

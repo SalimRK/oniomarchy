@@ -25,6 +25,21 @@
 # own System Services menu keeps these as two separate entries for the same
 # reason — see notes/pentest-tools.md / CLAUDE.md if a real Metasploit
 # (msfrpcd) toggle gets added later.
+#
+# apache/nginx added 2026-08-27, matching Parrot's own System Services menu
+# (unit names httpd.service/nginx.service confirmed against Arch's package
+# file listings, since neither is installed on this machine).
+#
+# beef added 2026-08-27, also matching Parrot. beef-xss ships no systemd
+# unit of its own (its docs say to run `sudo beef` directly) — "custom:"
+# prefix on a unit means it's authored by this repo (install/services/
+# beef.service) and installed by install-scripts.sh, not package-owned;
+# verify-units.sh skips the pacman-ownership check for those. beef is
+# confirm-gated: it binds 0.0.0.0:3000 with default credentials beef/beef
+# out of the box, a comparable exposure to SSH/RDP.
 sshd	SSH	openssh	yes	sshd.service
 xrdp	RDP	xrdp	yes	xrdp.service	xrdp-sesman.service
 postgresql	Database	postgresql	no	postgresql.service
+apache	Apache Webserver	apache	no	httpd.service
+nginx	Nginx Webserver	nginx	no	nginx.service
+beef	BeEF	beef-xss	yes	custom:beef.service
