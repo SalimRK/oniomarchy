@@ -36,6 +36,27 @@
 
 set -uo pipefail
 
+# Strip mise's shim/install dirs from PATH before probing or running
+# anything, same filter install/packages/lib-clean-build-path.sh uses for
+# AUR builds. Without this, a tool that execs a bare `python`/`pip` at
+# runtime (not via its own shebang) resolves to mise's Python instead of
+# the system one its package was actually built against — responder
+# fails this way: its wrapper does `exec python Responder.py`, and
+# mise's Python has no netifaces even though python-netifaces is
+# installed system-wide. This only helps runtime PATH lookups, not a
+# tool whose shebang already hardcodes a mise interpreter path (wfuzz,
+# built before this fix existed — see notes/install-issues.md).
+_oniomarchy_clean_path=""
+IFS=':' read -ra _oniomarchy_path_parts <<< "$PATH"
+for _oniomarchy_path_part in "${_oniomarchy_path_parts[@]}"; do
+  case "$_oniomarchy_path_part" in
+    */mise/*) continue ;;
+  esac
+  _oniomarchy_clean_path="${_oniomarchy_clean_path:+$_oniomarchy_clean_path:}$_oniomarchy_path_part"
+done
+export PATH="$_oniomarchy_clean_path"
+unset _oniomarchy_clean_path _oniomarchy_path_parts _oniomarchy_path_part
+
 tool="${1:?usage: oniomarchy-tool-help <binary>}"
 
 if ! command -v "$tool" >/dev/null 2>&1; then

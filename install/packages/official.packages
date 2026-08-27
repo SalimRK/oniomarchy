@@ -16,11 +16,14 @@ hydra
 aircrack-ng
 gobuster
 nikto
+perl-xml-writer
 hashcat
 radare2
 binwalk
 exploitdb
 impacket
+python-standard-asyncore
+python-wxpython
 wpscan
 jadx
 volatility3

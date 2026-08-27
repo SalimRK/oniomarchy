@@ -12,7 +12,6 @@ dirb
 beef-xss
 sherlock
 steghide
-wfuzz
 xrdp
 social-engineer-toolkit
 can-utils
@@ -37,13 +36,14 @@ sdrangel-bin
 # package; java-openjfx=17 has aged out of the AUR). See
 # notes/pentest-tools.md "Gaps, currently broken" before re-adding either.
 
-# armitage-git, sliver, theharvester-git, and powershell-empire-git are
-# NOT in this list even though they're part of the toolkit — all four
-# need a build-scoped env var override (JDK 11, pinned Go toolchain, a
-# pinned flit_core via PYTHONPATH, a mise-PATH-clean poetry build) that
-# would be wrong to apply to the whole batch above. Installed by their
-# own leaf scripts instead: see install/packages/aur-armitage.sh,
-# aur-sliver.sh, aur-theharvester.sh, aur-powershell-empire.sh.
+# armitage-git, sliver, theharvester-git, powershell-empire-git, and
+# wfuzz are NOT in this list even though they're part of the toolkit —
+# all five need a build-scoped override (JDK 11, pinned Go toolchain, a
+# pinned flit_core via PYTHONPATH, a mise-PATH-clean poetry build, a
+# source patch for wfuzz's dropped pkg_resources import) that would be
+# wrong to apply to the whole batch above. Installed by their own leaf
+# scripts instead: see install/packages/aur-armitage.sh, aur-sliver.sh,
+# aur-theharvester.sh, aur-powershell-empire.sh, aur-wfuzz.sh.
 
 # beef in the list above is beef-xss (the real Browser Exploitation
 # Framework) — a same-named-but-wrong AUR package called plain `beef` is
