@@ -24,6 +24,7 @@ supersdr
 dump1090-git
 cubicsdr
 sdrangel-bin
+python-garak
 
 # sdrpp-git is deliberately excluded — currently broken. Its makedepends
 # unconditionally builds every optional SDR backend (_plugindeps), one of
@@ -52,6 +53,10 @@ sdrangel-bin
 # remove the wrong package as part of this install if it's already on
 # the system (confirmed via the real PKGBUILD, not guessed).
 
-# AI Tools category has no package here yet — hexstrike-ai and garak are
-# both git-clone/pip installs, not `omarchy pkg` targets. See
-# notes/pentest-tools.md "AI Tools" section before adding a venv/pipx step.
+# python-garak (above) builds a venv + pip install inside its own
+# PKGBUILD package() step — needs the same mise-PATH-clean build env as
+# everything else in this batch, which aur.sh already provides, so no
+# dedicated script. hexstrike-ai is NOT here — no AUR package exists for
+# it, it's a git-clone + venv install with its own leaf script,
+# install/packages/hexstrike-ai.sh. See notes/pentest-tools.md "AI Tools"
+# section.

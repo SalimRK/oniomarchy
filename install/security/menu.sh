@@ -26,12 +26,15 @@ oniomarchy_jesc() {
 # codepoint here was copied from a real entry in
 # /usr/share/omarchy/default/omarchy/omarchy-menu.jsonc (see
 # notes/install-layout.md) — reused, not invented. Root "security" first,
-# then one row per category in notes/pentest-tools.md's Menu Tree (AI Tools
-# omitted: no omarchy-pkg-installable tool in that category yet).
+# then one row per category in notes/pentest-tools.md's Menu Tree.
 # Software Defined Radio reuses Wireless Attacks' F16BE (Wi-Fi) glyph —
 # that source file has no dedicated radio/antenna icon, and reusing an
 # already-confirmed codepoint is the established pattern here (EB11 and
-# F06F3 are each already reused across two categories above).
+# F06F3 are each already reused across two categories above). AI Tools
+# reuses the stock menu's own "install.ai" entry's F16A4 glyph — added
+# 2026-08-28 once hexstrike-ai got a real install script (see
+# install/packages/hexstrike-ai.sh); previously omitted here since no
+# omarchy-pkg-installable tool existed in that category yet.
 oniomarchy_security_submenus=(
   "security|EB11|Security"
   "security.infogather|F06F3|Info Gathering"
@@ -48,6 +51,7 @@ oniomarchy_security_submenus=(
   "security.reporting|F044|Reporting Tools"
   "security.social|F066F|Social Engineering"
   "security.automotive|EF70|Automotive"
+  "security.ai|F16A4|AI Tools"
   "security.webapps|F268|Webapps"
 )
 

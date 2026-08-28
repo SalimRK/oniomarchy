@@ -49,6 +49,27 @@ while IFS=$'\t' read -r pkg category mode extra; do
     skip)
       continue
       ;;
+    manual)
+      # A single named binary, verified via `command -v` (PATH lookup)
+      # rather than `pacman -Qi`/`pacman -Ql` — same verify-don't-guess
+      # rule, different source of truth. Covers two different cases:
+      #   - not a pacman package at all (e.g. hexstrike-ai): a git-clone+
+      #     venv install script placed $extra on PATH itself.
+      #   - a pacman-owned binary that's cross-listed into a second
+      #     category on purpose (e.g. msfmcpd, already covered by
+      #     metasploit's own `auto` row under Exploitation Tools, also
+      #     listed standalone under AI Tools) — `command -v` finds it
+      #     wherever pacman put it, no need to re-scan/duplicate the rest
+      #     of that package's binaries the way a second `auto` row would.
+      if ! command -v "$extra" >/dev/null 2>&1; then
+        echo "==> [security/verify-binaries] $pkg: '$extra' not found on PATH — skipping (manual mode never guesses)" >&2
+        continue
+      fi
+      printf 'ENTRY\t%s\t-\t%s\t%s\t%s\t%s\n' \
+        "$category" "$extra" "$extra" "$(oniomarchy_action_for "$extra")" "$pkg" \
+        >> "$oniomarchy_security_generated"
+      continue
+      ;;
     data|collapse|auto) ;;
     *)
       echo "==> [security/verify-binaries] $pkg: unknown mode '$mode' in categories.tsv — skipping" >&2

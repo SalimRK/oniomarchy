@@ -23,15 +23,17 @@
 #   data     - non-executable data package; single entry opens `extra`
 #              (a real directory, confirmed via pacman -Ql) in the file
 #              manager instead of running anything.
-#   collapse - force a single entry running just `extra`, ignoring the
-#              package's other binaries (used for john/hashcat, whose
-#              *2john/*2hashcat helper scripts would otherwise add ~170
-#              rows of rarely-used format converters — see
-#              notes/install-layout.md decision log for this and the
-#              other menu-scale calls).
-#   data     - non-executable data package; single entry opens `extra`
-#              (a real directory, confirmed via pacman -Ql) in the file
-#              manager instead of running anything.
+#   manual   - a single named binary (`extra`), verified via `command -v`
+#              (PATH lookup) instead of `pacman -Ql` — still
+#              verify-don't-guess, just a different source of truth.
+#              Two uses: (1) not a pacman package at all — a git-clone +
+#              venv install script placed `extra` on PATH itself (e.g.
+#              hexstrike-ai's /usr/local/bin/hexstrike-server); (2)
+#              cross-listing one binary from an `auto` package into a
+#              second category on purpose (e.g. msfmcpd, already covered
+#              by metasploit's own `auto` row under Exploitation Tools,
+#              also listed standalone under AI Tools) — `pkg` here is
+#              just a label, not looked up.
 #
 # Kept in sync with notes/pentest-tools.md's Menu Tree by hand.
 nmap	infogather	auto	-
@@ -102,3 +104,6 @@ cutycapt-qt5-git	reporting	auto	-
 social-engineer-toolkit	social	auto	-
 can-utils	automotive	auto	-
 savvycan	automotive	auto	-
+python-garak	ai	auto	-
+hexstrike-ai	ai	manual	hexstrike-server
+metasploit-mcp	ai	manual	msfmcpd
