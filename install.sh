@@ -27,5 +27,6 @@ source "$ONIOMARCHY_INSTALL/trigger/all.sh"
 source "$ONIOMARCHY_INSTALL/themes/all.sh"
 
 echo "==> Oniomarchy Phase 1 install complete."
-echo "==> Working: preflight, package install, security menu, trigger menu, services menu."
-echo "==> Stubs (see notes/install-layout.md): hooks, themes."
+echo "==> Working: preflight, package install, security menu, trigger menu, services menu, widgets, theme wordmarks."
+echo "==> Hooks: none needed, by design (see CLAUDE.md Architecture)."
+echo "==> Pending: oni-reimagined theme backgrounds (external regen in progress, see notes/theme-background-plan.md)."
