@@ -1,4 +1,4 @@
-echo "==> Installing Oniomarchy theme wordmarks"
+echo "==> Installing Oniomarchy theme backgrounds (wordmarks + lockups)"
 
 # Adds our recolored "ONIOMARCHY" wordmark as an extra selectable
 # wallpaper for each stock Omarchy theme, via Omarchy's real per-theme
@@ -29,39 +29,67 @@ echo "==> Installing Oniomarchy theme wordmarks"
 # Additive, not a replacement — the theme's own default wallpapers (and
 # its own stock omarchy.png background) stay in the rotation too.
 #
-# Source assets live in themes/wordmarks/ at the repo root (not
-# notes/theme-backgrounds/, which is gitignored/untracked — see
+# Source assets live in themes/wordmarks/ and themes/lockups/ at the repo
+# root (not notes/theme-backgrounds/, which is gitignored/untracked — see
 # notes/theme-background-plan.md) so a fresh clone of this repo can
-# actually run this script. Filenames (oniomarchy-<theme>.png) were
-# confirmed to match /usr/share/omarchy/themes/*'s real directory names
-# exactly, 1:1, no guessing.
+# actually run this script. Filenames were confirmed to match
+# /usr/share/omarchy/themes/*'s real directory names exactly, 1:1, no
+# guessing.
+#
+# TWO sets are installed, and they must not collide: both land in the
+# same ~/.config/omarchy/backgrounds/<theme>/ folder, so the theme name
+# cannot simply be "whatever follows oniomarchy-".
+#
+#   themes/wordmarks/oniomarchy-<theme>.png         the wordmark alone
+#   themes/lockups/oniomarchy-lockup-<theme>.png    oni mask over wordmark
+#
+# Hence the explicit prefix argument below rather than a single fixed
+# strip: `oniomarchy-lockup-catppuccin.png` must yield `catppuccin`, and
+# stripping only `oniomarchy-` would yield `lockup-catppuccin`, which
+# matches no stock theme and would be skipped by the guard — silently
+# installing nothing.
 #
 # The oni-reimagined *scenic* backgrounds (a separate, still-unfinished
 # asset — see notes/theme-background-plan.md) are NOT installed by this
 # step; they're still pending an external 4K regen, and will land the
 # same way once they exist.
 
-_oniomarchy_wordmarks_dir="$ONIOMARCHY_PATH/themes/wordmarks"
-_oniomarchy_backgrounds_dir="$HOME/.config/omarchy/backgrounds"
-_oniomarchy_wordmark_count=0
+# _oniomarchy_install_backgrounds <src_dir> <filename_prefix> <label>
+#
+# Copies every <prefix><theme>.png into that theme's background override
+# folder. A file naming a theme this machine does not have is skipped
+# rather than guessed at.
+_oniomarchy_install_backgrounds() {
+  local src_dir="$1" prefix="$2" label="$3"
+  local file theme count=0
 
-for _oniomarchy_wordmark in "$_oniomarchy_wordmarks_dir"/oniomarchy-*.png; do
-  [[ -f $_oniomarchy_wordmark ]] || continue
-  _oniomarchy_theme=$(basename "$_oniomarchy_wordmark" .png)
-  _oniomarchy_theme=${_oniomarchy_theme#oniomarchy-}
-
-  if [[ ! -d /usr/share/omarchy/themes/$_oniomarchy_theme ]]; then
-    echo "==> [themes/install] $_oniomarchy_theme: no such stock Omarchy theme — skipping (no guessing)" >&2
-    continue
+  if [[ ! -d $src_dir ]]; then
+    echo "==> [themes/install] missing asset dir: $src_dir" >&2
+    return 1
   fi
 
-  mkdir -p "$_oniomarchy_backgrounds_dir/$_oniomarchy_theme"
-  cp "$_oniomarchy_wordmark" "$_oniomarchy_backgrounds_dir/$_oniomarchy_theme/"
-  _oniomarchy_wordmark_count=$((_oniomarchy_wordmark_count + 1))
-done
+  for file in "$src_dir/$prefix"*.png; do
+    [[ -f $file ]] || continue
+    theme=$(basename "$file" .png)
+    theme=${theme#"$prefix"}
 
-echo "==> Installed $_oniomarchy_wordmark_count oniomarchy wordmarks to $_oniomarchy_backgrounds_dir/<theme>/"
-echo "==> Cycle backgrounds (theme picker / next-wallpaper action) on the current theme to see it"
+    if [[ ! -d /usr/share/omarchy/themes/$theme ]]; then
+      echo "==> [themes/install] $theme: no such stock Omarchy theme — skipping (no guessing)" >&2
+      continue
+    fi
+
+    mkdir -p "$HOME/.config/omarchy/backgrounds/$theme"
+    cp "$file" "$HOME/.config/omarchy/backgrounds/$theme/"
+    count=$((count + 1))
+  done
+
+  echo "==> Installed $count oniomarchy $label to ~/.config/omarchy/backgrounds/<theme>/"
+}
+
+_oniomarchy_install_backgrounds "$ONIOMARCHY_PATH/themes/wordmarks" oniomarchy- wordmarks
+_oniomarchy_install_backgrounds "$ONIOMARCHY_PATH/themes/lockups" oniomarchy-lockup- lockups
+
+echo "==> Cycle backgrounds (theme picker / next-wallpaper action) on the current theme to see them"
 echo "==> Oni-reimagined scenic backgrounds not installed yet — regen in progress, see notes/theme-background-plan.md"
 
-unset _oniomarchy_wordmarks_dir _oniomarchy_backgrounds_dir _oniomarchy_wordmark_count _oniomarchy_wordmark _oniomarchy_theme
+unset -f _oniomarchy_install_backgrounds
