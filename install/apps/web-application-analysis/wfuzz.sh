@@ -62,7 +62,44 @@ pkg_official python-wxpython
 #    doesn't survive rebuilds here either).
 source "$ONIOMARCHY_INSTALL/apps/lib/clean-build-path.sh"
 
-retry_transfer yay -S --rebuild --noconfirm wfuzz
+# Rebuild only when the installed copy is actually broken.
+#
+# `--rebuild` used to run unconditionally, which made wfuzz the one app
+# that can never be a no-op: a full source build plus, measured on a real
+# run, 34 seconds of `yay` waiting on an AUR RPC query that timed out
+# ("context deadline exceeded"). It was paying that on every install for a
+# one-time repair.
+#
+# Of the three problems above, only #1 (the mise-poisoned shebang) needs a
+# rebuild at all, and only on a machine that installed wfuzz before
+# lib/clean-build-path.sh existed. #2 and #3 patch the *installed* files
+# and are idempotent, so skipping the rebuild leaves them in place — it is
+# the rebuild that overwrites them and forces the re-patch.
+#
+# The check reads the real entry points via `pacman -Ql` rather than
+# trusting a stamp file: if the AUR ever ships a version that reinstates a
+# bad shebang, this notices and repairs it. Escape hatch for a genuinely
+# corrupt install: `yay -S --rebuild wfuzz` by hand.
+_wfuzz_rebuild_reason=""
+if ! pacman -Q wfuzz >/dev/null 2>&1; then
+  _wfuzz_rebuild_reason="not installed"
+else
+  while read -r _wfuzz_bin; do
+    [[ -f $_wfuzz_bin ]] || continue
+    if head -1 "$_wfuzz_bin" | grep -q 'mise'; then
+      _wfuzz_rebuild_reason="mise shebang in $_wfuzz_bin"
+      break
+    fi
+  done < <(pacman -Ql wfuzz | awk '$2 ~ /\/usr\/bin\/[^\/]+$/ {print $2}')
+fi
+
+if [[ -n $_wfuzz_rebuild_reason ]]; then
+  echo "==> Rebuilding wfuzz ($_wfuzz_rebuild_reason)"
+  retry_transfer yay -S --rebuild --noconfirm wfuzz
+else
+  echo "==> wfuzz installed with clean entry points — skipping rebuild"
+fi
+unset _wfuzz_bin _wfuzz_rebuild_reason
 
 _file_func=$(pacman -Ql wfuzz | awk '/wfuzz\/helpers\/file_func\.py$/ {print $2}')
 if [[ -z $_file_func ]]; then
