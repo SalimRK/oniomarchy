@@ -1,3 +1,4 @@
 notes/
-oniomarchy-install*.log
+*.log
+Users-Log/
 CLAUDE.md

@@ -37,7 +37,7 @@
 set -uo pipefail
 
 # Strip mise's shim/install dirs from PATH before probing or running
-# anything, same filter install/packages/lib-clean-build-path.sh uses for
+# anything, same filter install/apps/lib/clean-build-path.sh uses for
 # AUR builds. Without this, a tool that execs a bare `python`/`pip` at
 # runtime (not via its own shebang) resolves to mise's Python instead of
 # the system one its package was actually built against — responder

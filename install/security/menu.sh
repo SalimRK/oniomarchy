@@ -33,7 +33,7 @@ oniomarchy_jesc() {
 # F06F3 are each already reused across two categories above). AI Tools
 # reuses the stock menu's own "install.ai" entry's F16A4 glyph — added
 # 2026-08-28 once hexstrike-ai got a real install script (see
-# install/packages/hexstrike-ai.sh); previously omitted here since no
+# install/apps/ai-tools/hexstrike-ai.sh); previously omitted here since no
 # omarchy-pkg-installable tool existed in that category yet.
 oniomarchy_security_submenus=(
   "security|EB11|Security"

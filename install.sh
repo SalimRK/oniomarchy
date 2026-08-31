@@ -2,7 +2,8 @@
 #
 # Oniomarchy Phase 1 installer — overlay on top of a stock Omarchy system.
 # See notes/ROADMAP.md (Phase 1 scope), notes/pentest-tools.md (tool/menu/
-# services plan), and notes/install-layout.md (this script's own layout,
+# services plan), and notes/per-app-scripts.md (the one-app-one-script layout under install/apps/),
+# notes/install-layout.md (this script's own layout,
 # adapted from Omarchy's real install/ structure — notes/omarchy-script-structure.md).
 #
 # Does everything the Omarchy way: `omarchy pkg add`, `omarchy hook install`,
@@ -18,7 +19,7 @@ export ONIOMARCHY_INSTALL="$ONIOMARCHY_PATH/install"
 source "$ONIOMARCHY_INSTALL/helpers/logging.sh"
 
 source "$ONIOMARCHY_INSTALL/preflight/all.sh"
-source "$ONIOMARCHY_INSTALL/packages/all.sh"
+source "$ONIOMARCHY_INSTALL/apps/all.sh"
 source "$ONIOMARCHY_INSTALL/security/all.sh"
 source "$ONIOMARCHY_INSTALL/services/all.sh"
 source "$ONIOMARCHY_INSTALL/hooks/all.sh"
@@ -26,7 +27,16 @@ source "$ONIOMARCHY_INSTALL/widgets/all.sh"
 source "$ONIOMARCHY_INSTALL/trigger/all.sh"
 source "$ONIOMARCHY_INSTALL/themes/all.sh"
 
-echo "==> Oniomarchy Phase 1 install complete."
+if [[ -n ${ONIOMARCHY_APPS_FAILED:-} ]]; then
+  echo "==> Oniomarchy Phase 1 install finished WITH FAILURES."
+  echo "==> Apps that did not install: $ONIOMARCHY_APPS_FAILED"
+  echo "==> Re-run ./install.sh to retry just those — anything already"
+  echo "    installed is skipped, so a retry is cheap."
+else
+  echo "==> Oniomarchy Phase 1 install complete."
+fi
 echo "==> Working: preflight, package install, security menu, trigger menu, services menu, widgets, theme wordmarks, theme lockups, branding."
 echo "==> Hooks: none needed, by design (see CLAUDE.md Architecture)."
 echo "==> Pending: oni-reimagined theme backgrounds (external regen in progress, see notes/theme-background-plan.md)."
+
+[[ -z ${ONIOMARCHY_APPS_FAILED:-} ]]
