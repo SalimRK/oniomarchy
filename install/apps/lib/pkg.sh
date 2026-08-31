@@ -35,6 +35,16 @@ _oniomarchy_is_transfer_failure() {
 # above them are the honest signal, and they are in the same captured
 # output, so nothing is lost by ignoring the summary.
 
+# Publish a short note for the live line to show (install/helpers/ui.sh
+# reads this file every spinner tick). Retries otherwise happen entirely
+# in the log, which in quiet mode is off-screen — a stalled mirror would
+# look exactly like a frozen spinner for up to three attempts, which is
+# the very failure this repo restructured around.
+_oniomarchy_status() {
+  [[ -n ${ONIOMARCHY_STATUS:-} ]] || return 0
+  printf '%s' "$1" > "$ONIOMARCHY_STATUS" 2>/dev/null || true
+}
+
 _oniomarchy_pkg_install() {
   local kind="$1" attempts="$2"
   shift 2
@@ -59,11 +69,13 @@ _oniomarchy_pkg_install() {
     _oniomarchy_is_transfer_failure "$log" || break
 
     echo "==> Transfer failure — retrying ($attempt/$(( attempts - 1 ))): $*" >&2
+    _oniomarchy_status "$1 · retry $attempt/$(( attempts - 1 ))"
     sleep 3
     attempt=$(( attempt + 1 ))
   done
 
   rm -f "$log"
+  _oniomarchy_status ""
   return "$rc"
 }
 
@@ -112,10 +124,12 @@ retry_transfer() {
     _oniomarchy_is_transfer_failure "$log" || break
 
     echo "==> Transfer failure — retrying ($attempt/2): $*" >&2
+    _oniomarchy_status "${1##*/} · retry $attempt/2"
     sleep 5
     attempt=$(( attempt + 1 ))
   done
 
   rm -f "$log"
+  _oniomarchy_status ""
   return "$rc"
 }

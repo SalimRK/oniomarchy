@@ -30,6 +30,11 @@ _oniomarchy_prefetch() {
 
   if ! sudo pacman -Sw --needed --noconfirm "${pkgs[@]}"; then
     echo "==> Prefetch incomplete — continuing; each app will fetch what it needs" >&2
+    # Non-zero so the caller can SAY it was incomplete. Still not fatal:
+    # install/apps/all.sh runs this step in a branch that reports the
+    # failure and carries on. Returning 0 here instead would leave the
+    # operator looking at a green tick for a step that half-worked.
+    return 1
   fi
 
   return 0
