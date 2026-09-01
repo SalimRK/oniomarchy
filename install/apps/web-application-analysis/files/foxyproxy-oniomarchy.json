@@ -1,0 +1,44 @@
+{
+  "mode": "disable",
+  "sync": false,
+  "autoBackup": false,
+  "passthrough": "",
+  "data": [
+    {
+      "active": true,
+      "title": "Burp Suite",
+      "type": "http",
+      "hostname": "127.0.0.1",
+      "port": "8080",
+      "username": "",
+      "password": "",
+      "cc": "",
+      "city": "",
+      "color": "#ff6633",
+      "pac": "",
+      "pacString": "",
+      "proxyDNS": true,
+      "include": [],
+      "exclude": [],
+      "tabProxy": []
+    },
+    {
+      "active": true,
+      "title": "Caido",
+      "type": "http",
+      "hostname": "127.0.0.1",
+      "port": "8081",
+      "username": "",
+      "password": "",
+      "cc": "",
+      "city": "",
+      "color": "#e5484d",
+      "pac": "",
+      "pacString": "",
+      "proxyDNS": true,
+      "include": [],
+      "exclude": [],
+      "tabProxy": []
+    }
+  ]
+}

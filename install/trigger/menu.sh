@@ -85,6 +85,34 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
     echo "==> [trigger/menu] python3 not available — skipping trigger.pentest.http-server entry" >&2
   fi
 
+  # Trust proxy CA: fetch an intercepting proxy's CA certificate and add it
+  # to the system trust store, so Firefox/Chromium/curl stop throwing
+  # certificate errors on every HTTPS page routed through Burp or Caido.
+  #
+  # Deliberately a menu action rather than an install.sh step: Burp serves
+  # its CA at http://127.0.0.1:8080/cert only while Burp is actually
+  # running, so there is nothing to fetch at install time. See
+  # install/trigger/proxy-trust.sh.
+  #
+  # sudo (not pkexec) because omarchy-launch-tui gives it a real terminal
+  # and the operator should see exactly which certificate got trusted —
+  # this writes to the system trust store. Matches the privilege rule in
+  # CLAUDE.md: sudo for terminal-visible actions, pkexec only for
+  # background GUI actions with nowhere to prompt.
+  #
+  # Icon: md-certificate (0xF0811), confirmed present in the installed
+  # JetBrainsMono Nerd Font's cmap before use, stored as hex rather than a
+  # hand-typed glyph (see feedback_pua_glyph_transcription memory).
+  if command -v oniomarchy-proxy-trust >/dev/null 2>&1; then
+    oniomarchy_proxytrust_icon=$(printf '%b' '\UF0811')
+    oniomarchy_proxytrust_action='port=$(omarchy-menu-input "Proxy port (blank = 8080, Burp)") && port="${port:-8080}" && exec omarchy-launch-tui bash -c "sudo oniomarchy-proxy-trust $port; exec bash"'
+    printf '  "trigger.pentest.proxy-trust": {"icon":"%s","label":"Trust Proxy CA","action":"%s"},\n' \
+      "$(oniomarchy_jesc "$oniomarchy_proxytrust_icon")" \
+      "$(oniomarchy_jesc "$oniomarchy_proxytrust_action")"
+  else
+    echo "==> [trigger/menu] oniomarchy-proxy-trust not installed — skipping trigger.pentest.proxy-trust entry" >&2
+  fi
+
   echo "  // END oniomarchy trigger menu"
 } > "$oniomarchy_block_file"
 
