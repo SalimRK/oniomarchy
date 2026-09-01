@@ -95,6 +95,7 @@ impacket	postex	auto	-
 sliver	postex	auto	-
 powershell-empire-git	postex	auto	-
 volatility3	forensics	auto	-
+foremost	forensics	auto	-
 sleuthkit	forensics	auto	-
 testdisk	forensics	auto	-
 perl-image-exiftool	forensics	auto	-
