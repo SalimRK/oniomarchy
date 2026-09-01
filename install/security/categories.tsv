@@ -45,6 +45,7 @@ maltego	infogather	auto	-
 theharvester-git	infogather	auto	-
 sherlock	infogather	auto	-
 nikto	vuln	auto	-
+nuclei	vuln	auto	-
 sqlmap	web	auto	-
 wpscan	web	auto	-
 burpsuite	web	auto	-
@@ -58,6 +59,7 @@ rockyou	password	data	/usr/share/dict
 seclists	password	data	/usr/share/doc/seclists
 aircrack-ng	wireless	auto	-
 wifite	wireless	auto	-
+kismet	wireless	auto	-
 rtl-sdr	sdr	auto	-
 hackrf	sdr	auto	-
 airspy	sdr	auto	-
@@ -102,6 +104,7 @@ eyewitness-git	reporting	auto	-
 faraday-bin	reporting	auto	-
 cutycapt-qt5-git	reporting	auto	-
 social-engineer-toolkit	social	auto	-
+gophish	social	auto	-
 can-utils	automotive	auto	-
 savvycan	automotive	auto	-
 python-garak	ai	auto	-
