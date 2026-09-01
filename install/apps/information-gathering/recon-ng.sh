@@ -43,9 +43,16 @@
 # makepkg never has to invoke sudo on its own — this leaf takes exactly
 # one privileged action, the pacman -U at the end, and install.sh has
 # already primed sudo by the time apps run.
-pkg_official python-flask python-jsonschema python-mistune python-packaging \
-             python-six python-yaml \
-             python-build python-installer python-setuptools python-wheel
+#
+# Both calls are deliberately kept on ONE line each. lib/prefetch.sh
+# collects the prefetch list with a line-based
+# `grep -oP '^\s*pkg_official\s+\K.*'`, so a backslash continuation here
+# breaks it twice over: the trailing `\` is captured as if it were a
+# package name (pacman then fails the whole prefetch with
+# "target not found: \"), and every package on the continuation lines is
+# silently dropped from the list. Found the hard way on a real run.
+pkg_official python-flask python-jsonschema python-mistune python-packaging python-six python-yaml
+pkg_official python-build python-installer python-setuptools python-wheel
 
 _flasgger_src="$ONIOMARCHY_APP_DIR/files/python-flasgger"
 
