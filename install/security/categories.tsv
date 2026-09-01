@@ -43,6 +43,7 @@ ffuf	infogather	auto	-
 dirb	infogather	auto	-
 maltego	infogather	auto	-
 theharvester-git	infogather	auto	-
+recon-ng	infogather	auto	-
 sherlock	infogather	auto	-
 nikto	vuln	auto	-
 nuclei	vuln	auto	-
@@ -99,6 +100,7 @@ testdisk	forensics	auto	-
 perl-image-exiftool	forensics	auto	-
 mat2	forensics	auto	-
 steghide	forensics	auto	-
+autopsy	forensics	auto	-
 cherrytree	reporting	auto	-
 eyewitness-git	reporting	auto	-
 faraday-bin	reporting	auto	-

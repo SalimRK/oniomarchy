@@ -1,0 +1,35 @@
+# Maintainer: CyberBow <Rksalimrk@gmail.com>
+
+pkgname=python-flasgger
+_name=flasgger
+pkgver=0.9.7.1
+pkgrel=1
+pkgdesc='Extract Swagger/OpenAPI specs from your Flask project and serve a Swagger UI'
+arch=('any')
+url='https://github.com/flasgger/flasgger'
+license=('MIT')
+depends=('python'
+         'python-flask'
+         'python-jsonschema'
+         'python-mistune'
+         'python-packaging'
+         'python-six'
+         'python-yaml')
+makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
+source=("$_name-$pkgver.tar.gz::https://files.pythonhosted.org/packages/source/${_name::1}/$_name/$_name-$pkgver.tar.gz")
+sha256sums=('ca098e10bfbb12f047acc6299cc70a33851943a746e550d86e65e60d4df245fb')
+
+build() {
+  cd "$_name-$pkgver"
+  python -m build --wheel --no-isolation
+}
+
+package() {
+  cd "$_name-$pkgver"
+  python -m installer --destdir="$pkgdir" dist/*.whl
+  install -Dm644 LICENSE -t "$pkgdir/usr/share/licenses/$pkgname/"
+
+  # Upstream's sdist ships a macOS .DS_Store inside the package directory
+  # and setup.py's include_package_data pulls it into the wheel.
+  find "$pkgdir" -name '.DS_Store' -delete
+}
