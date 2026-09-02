@@ -15,7 +15,20 @@ for desktop_file in /usr/share/applications/*.desktop /opt/*/*.desktop; do
   [[ -f $desktop_file ]] || continue
   exec_line=$(grep -m1 '^Exec=' "$desktop_file" 2>/dev/null || true)
   exec_line=${exec_line#Exec=}
-  exec_bin=${exec_line%% *}
+  # The Exec target is not always the first word. The desktop-entry spec
+  # allows the command to be wrapped, and autopsy ships
+  # `Exec=env TSK_HOME=/bin /usr/bin/autopsy`. Reading word one there
+  # records `env` as a GUI binary and never records `autopsy`, so a full
+  # NetBeans forensics GUI fell through to the terminal help entry
+  # (found on a real run 2026-09-02, the first with autopsy installed).
+  # Skip a leading `env` and any VAR=value assignments after it.
+  read -ra exec_words <<<"$exec_line"
+  exec_idx=0
+  [[ ${exec_words[0]:-} == env ]] && exec_idx=1
+  while [[ ${exec_words[$exec_idx]:-} == [A-Za-z_]*=* ]]; do
+    exec_idx=$((exec_idx + 1))
+  done
+  exec_bin=${exec_words[$exec_idx]:-}
   exec_bin=${exec_bin##*/}
   [[ -n $exec_bin ]] && oniomarchy_desktop_covered["$exec_bin"]=1
 done
