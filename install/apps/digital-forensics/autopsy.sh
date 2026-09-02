@@ -53,4 +53,65 @@
 pkg_official jdk17-openjdk ant autoconf-archive
 
 pkg_aur java17-openjfx-bin
+
+# sleuthkit-java has to be COMPILED by JDK 17, and its PKGBUILD does not
+# arrange that. `makedepends=(ant java-environment=17)` only guarantees a
+# JDK 17 is installed; ant then compiles with whatever
+# `archlinux-java status` calls default. On a machine whose default is
+# newer — this one defaults to java-26-openjdk — the jar comes out at
+# class file version 70 while autopsy's own autopsy.conf hardcodes
+# `jdkhome="/usr/lib/jvm/java-17-openjdk/"`, which reads 61 at most. The
+# install succeeds and the GUI then dies on launch:
+#
+#   java.lang.UnsupportedClassVersionError: org/sleuthkit/datamodel/
+#   TskCoreException has been compiled by a more recent version of the
+#   Java Runtime (class file version 70.0), this version of the Java
+#   Runtime only recognizes class file versions up to 61.0
+#
+# autopsy symlinks modules/ext/sleuthkit-<ver>.jar to the one in
+# /usr/share/java, so there is exactly one jar to get right and no
+# separate copy inside autopsy's own tree.
+#
+# JAVA_HOME is exported rather than `archlinux-java set` — the selection
+# is scoped to this build instead of changing what every other Java app
+# on the system uses. ant honours JAVA_HOME, and so does the configure
+# step's AX_JNI_INCLUDE_DIR when it goes looking for the JNI headers.
+_autopsy_jdk17=/usr/lib/jvm/java-17-openjdk
+
+# Class file major 61 is Java 17 (the mapping is major - 44). Anything
+# higher means the jar was built by a newer JDK than autopsy will run.
+_autopsy_tsk_class_major() {
+  bsdtar -xOf "$1" org/sleuthkit/datamodel/TskCoreException.class 2>/dev/null |
+    od -An -tu1 -j6 -N2 | awk '{print $1 * 256 + $2}'
+}
+
+# sleuthkit-java is installed by name BEFORE autopsy. Left to itself,
+# `pkg_aur autopsy` would pull it in as a dependency and build it under
+# the default JDK again, which is the whole bug.
+_autopsy_tsk_rebuild_reason=""
+if pacman -Qq sleuthkit-java &>/dev/null; then
+  _autopsy_tsk_jar=$(pacman -Ql sleuthkit-java | awk '{print $2}' |
+    grep -E '/usr/share/java/sleuthkit-[0-9.]+\.jar$' | head -1)
+  _autopsy_tsk_major=$(_autopsy_tsk_class_major "$_autopsy_tsk_jar")
+  if [[ -z $_autopsy_tsk_major ]]; then
+    _autopsy_tsk_rebuild_reason="cannot read class version from $_autopsy_tsk_jar"
+  elif ((_autopsy_tsk_major > 61)); then
+    _autopsy_tsk_rebuild_reason="jar is class $_autopsy_tsk_major (JDK $((_autopsy_tsk_major - 44))), autopsy runs JDK 17"
+  fi
+fi
+
+if [[ -n $_autopsy_tsk_rebuild_reason ]]; then
+  # --needed would skip an already-installed-but-wrong build, the same
+  # situation wfuzz.sh handles the same way.
+  echo "==> Rebuilding sleuthkit-java under JDK 17 ($_autopsy_tsk_rebuild_reason)"
+  JAVA_HOME="$_autopsy_jdk17" PATH="$_autopsy_jdk17/bin:$PATH" \
+    retry_transfer yay -S --rebuild --noconfirm sleuthkit-java
+else
+  JAVA_HOME="$_autopsy_jdk17" PATH="$_autopsy_jdk17/bin:$PATH" \
+    pkg_aur sleuthkit-java
+fi
+
+unset _autopsy_jdk17 _autopsy_tsk_jar _autopsy_tsk_major _autopsy_tsk_rebuild_reason
+unset -f _autopsy_tsk_class_major
+
 pkg_aur autopsy
