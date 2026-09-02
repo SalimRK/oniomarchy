@@ -34,11 +34,23 @@
 # runtime dependencies and already have their own leaves in this category,
 # so they are not repeated here — --needed makes leaf order irrelevant.
 #
+# autoconf-archive is a real makedepends gap in the sleuthkit-java
+# PKGBUILD, not a preference. Its build() runs `autoreconf -fi`, which
+# regenerates configure from scratch, and sleuthkit's own m4/ ships
+# every macro that regeneration needs except AX_PKG_CHECK_MODULES —
+# called from m4/tsk_opt_dep_check.m4 and owned by autoconf-archive
+# (extra). Without it the macro is never expanded, so it survives into
+# the generated script as a literal shell word and configure dies at
+# line 22831 with `syntax error near unexpected token 'SQLITE3,'` after
+# several minutes of checks. The PKGBUILD does not declare it, so yay
+# will not pull it in; installing it here is what makes the build
+# reproducible on a machine that has never built an autotools project.
+#
 # Heads-up on size: autopsy's release zip is ~1.25 GB and package() copies
 # the whole tree into /usr/share/autopsy, so this is by a wide margin the
 # longest-running leaf in the install. sleuthkit-java compiles the C
 # library plus two ant builds on top of that.
-pkg_official jdk17-openjdk ant
+pkg_official jdk17-openjdk ant autoconf-archive
 
 pkg_aur java17-openjfx-bin
 pkg_aur autopsy
