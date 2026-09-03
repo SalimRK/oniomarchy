@@ -33,9 +33,33 @@ for desktop_file in /usr/share/applications/*.desktop /opt/*/*.desktop; do
   [[ -n $exec_bin ]] && oniomarchy_desktop_covered["$exec_bin"]=1
 done
 
-# Action for a given binary: direct launch (no terminal) if it's a known
-# GUI app via a real .desktop Exec= target, otherwise open a terminal
-# showing the tool's own usage and hand off to an interactive shell.
+# A few binaries need a launch shape that's neither the plain .desktop
+# GUI branch nor the CLI tool-help branch below — verified per-binary,
+# not guessed, per CLAUDE.md's verify-don't-guess rule.
+declare -A oniomarchy_custom_action
+
+# fern (fern-wifi-cracker-git): /usr/bin/fern is `exec python
+# execute.py "$@"`, a PyQt5 app with no argparse/CLI handling at all, and
+# it's architecturally built to run fully as root — it writes
+# .font_settings.dat and a cookie-hijacker DB straight into its own
+# /usr/share/fern-wifi-cracker install dir and self-updates that
+# directory on every launch (confirmed from source; matches Kali's own
+# packaging, which is the identical `cd /usr/share/fern-wifi-cracker;
+# exec python3 execute.py` and whose own docs just say `sudo
+# fern-wifi-cracker`). Neither plain `sudo fern` nor plain `pkexec fern`
+# can reach the display under Hyprland's XWayland — both were tried live
+# and both abort identically in Qt's platform-integration init (confirmed
+# from the real coredump via coredumpctl, not guessed — see
+# notes/install-issues.md). oniomarchy-fern-launch (installed by
+# install-scripts.sh) grants root a one-off `xhost` exception as the
+# unprivileged user first, then calls `pkexec fern` — pkexec's own themed
+# polkit dialog is the password prompt, so this still needs no terminal.
+oniomarchy_custom_action["fern"]="oniomarchy-fern-launch"
+
+# Action for a given binary: a custom override above, else direct launch
+# (no terminal) if it's a known GUI app via a real .desktop Exec= target,
+# else open a terminal showing the tool's own usage and hand off to an
+# interactive shell.
 #
 # CLI entries deliberately do NOT run the tool bare. Nearly every tool
 # here needs arguments, so a bare run just prints an error — and the ones
@@ -45,7 +69,9 @@ done
 # see install/security/tool-help.sh.
 oniomarchy_action_for() {
   local b="$1"
-  if [[ -n ${oniomarchy_desktop_covered[$b]:-} ]]; then
+  if [[ -n ${oniomarchy_custom_action[$b]:-} ]]; then
+    printf '%s' "${oniomarchy_custom_action[$b]}"
+  elif [[ -n ${oniomarchy_desktop_covered[$b]:-} ]]; then
     printf 'uwsm-app -- %s' "$b"
   else
     printf "omarchy-launch-tui bash -c 'oniomarchy-tool-help %s; exec bash'" "$b"
