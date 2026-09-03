@@ -95,7 +95,7 @@ bettercap	sniff	auto	-
 responder	sniff	auto	-
 impacket	postex	auto	-
 sliver	postex	auto	-
-peass-ng	postex	auto	-
+peass-ng	postex	data	/usr/share/peass-ng
 powershell-empire-git	postex	auto	-
 volatility3	forensics	auto	-
 foremost	forensics	auto	-
