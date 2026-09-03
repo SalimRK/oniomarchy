@@ -23,6 +23,8 @@ export ONIOMARCHY_INSTALL="$ONIOMARCHY_PATH/install"
 ONIOMARCHY_VERBOSE=0
 ONIOMARCHY_LOG=""
 _oniomarchy_no_log=0
+_oniomarchy_list_packs=0
+ONIOMARCHY_PACK_ARGS=()
 
 usage() {
   cat <<'USAGE'
@@ -30,6 +32,11 @@ Usage: ./install.sh [options]
 
   -v, --verbose     show every package manager line as it happens
                     (the default shows one progress line instead)
+      --pack SPEC   install exactly the named pack(s) instead of the
+                    default core — comma-separated or repeatable
+                    (core, all, <category>, <category>-all)
+      --list-packs  print every pack name with its leaf count and exit
+                    without installing anything
       --log PATH    write the log somewhere other than
                     ~/.local/state/oniomarchy/install-<timestamp>.log
       --no-log      don't keep a log file
@@ -38,12 +45,22 @@ Usage: ./install.sh [options]
 Both modes write the same output to the log. Quiet mode falls back to
 verbose automatically when there is no terminal to draw on — a piped or
 redirected run, so that captured logs stay readable.
+
+A bare run installs the curated default ("core"). --pack REPLACES that
+selection rather than adding to it — see notes/pack-design.md.
 USAGE
 }
 
 while (( $# )); do
   case "$1" in
     -v|--verbose) ONIOMARCHY_VERBOSE=1 ;;
+    --pack)       [[ $# -ge 2 ]] || { echo "--pack needs a value" >&2; exit 2; }
+                  IFS=',' read -ra _oniomarchy_pack_tokens <<< "$2"
+                  ONIOMARCHY_PACK_ARGS+=("${_oniomarchy_pack_tokens[@]}")
+                  shift ;;
+    --pack=*)     IFS=',' read -ra _oniomarchy_pack_tokens <<< "${1#*=}"
+                  ONIOMARCHY_PACK_ARGS+=("${_oniomarchy_pack_tokens[@]}") ;;
+    --list-packs) _oniomarchy_list_packs=1 ;;
     --log)        [[ $# -ge 2 ]] || { echo "--log needs a path" >&2; exit 2; }
                   ONIOMARCHY_LOG="$2"; shift ;;
     --log=*)      ONIOMARCHY_LOG="${1#*=}" ;;
@@ -53,6 +70,48 @@ while (( $# )); do
   esac
   shift
 done
+
+export ONIOMARCHY_APPS="$ONIOMARCHY_INSTALL/apps"
+source "$ONIOMARCHY_INSTALL/apps/lib/packs.sh"
+
+if (( _oniomarchy_list_packs )); then
+  printf 'core%25s %d leaves (the default)\n' "" "$(oniomarchy_pack_resolve core | grep -c .)"
+  printf 'all%26s %d leaves (every leaf in the tree)\n' "" "$(oniomarchy_pack_resolve all | grep -c .)"
+  echo
+  while IFS= read -r _oniomarchy_cat; do
+    _oniomarchy_curated=$(oniomarchy_pack_resolve "$_oniomarchy_cat" | grep -c .)
+    _oniomarchy_total=$(oniomarchy_pack_resolve "${_oniomarchy_cat}-all" | grep -c .)
+    printf '%-24s %2d curated  /  %2d total\n' "$_oniomarchy_cat" "$_oniomarchy_curated" "$_oniomarchy_total"
+  done < <(oniomarchy_pack_categories)
+  exit 0
+fi
+
+if (( ${#ONIOMARCHY_PACK_ARGS[@]} == 0 )); then
+  ONIOMARCHY_PACK_ARGS=(core)
+fi
+
+for _oniomarchy_pack in "${ONIOMARCHY_PACK_ARGS[@]}"; do
+  if ! oniomarchy_pack_valid_name "$_oniomarchy_pack"; then
+    echo "unknown pack: $_oniomarchy_pack" >&2
+    echo >&2
+    echo "valid packs:" >&2
+    oniomarchy_pack_valid_names_list | sed 's/^/  /' >&2
+    exit 2
+  fi
+done
+unset _oniomarchy_pack
+
+# Resolved once, before anything else runs, and handed to apps/all.sh (in
+# this same shell — sourced, not forked) and to prefetch.sh (which does
+# fork, so it needs the list as a file, not an array) via this path. Not
+# filtering prefetch.sh to this same list would mean a `--pack sdr` run
+# still downloads official packages for all 87 apps — see
+# notes/pack-design.md's "the trap".
+ONIOMARCHY_SELECTED_LEAVES_FILE="$(mktemp -t oniomarchy-leaves.XXXXXXXX)"
+export ONIOMARCHY_SELECTED_LEAVES_FILE
+oniomarchy_pack_resolve "${ONIOMARCHY_PACK_ARGS[@]}" > "$ONIOMARCHY_SELECTED_LEAVES_FILE"
+ONIOMARCHY_PACK_SUMMARY="${ONIOMARCHY_PACK_ARGS[*]}"
+export ONIOMARCHY_PACK_SUMMARY
 
 source "$ONIOMARCHY_INSTALL/helpers/ui.sh"
 ui_init
@@ -111,7 +170,7 @@ _oniomarchy_cleanup() {
   if [[ -n ${_oniomarchy_sudo_keepalive:-} ]]; then
     kill "$_oniomarchy_sudo_keepalive" 2>/dev/null || true
   fi
-  rm -f "$ONIOMARCHY_STATUS"
+  rm -f "$ONIOMARCHY_STATUS" "$ONIOMARCHY_SELECTED_LEAVES_FILE"
   (( _oniomarchy_keep_log )) || rm -f "$ONIOMARCHY_LOG"
 }
 trap '_oniomarchy_cleanup $?' EXIT

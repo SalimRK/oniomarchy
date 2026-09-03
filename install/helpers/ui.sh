@@ -594,6 +594,7 @@ ui_summary() {
            "" "re-run ./install.sh to retry just those —" \
            "anything already installed is skipped")
   fi
+  [[ -n ${ONIOMARCHY_PACK_SUMMARY:-} ]] && lines+=("" "packs: $ONIOMARCHY_PACK_SUMMARY")
   [[ -n ${ONIOMARCHY_LOG_SHOWN:-} ]] && lines+=("" "log: $(ui_tilde "$ONIOMARCHY_LOG")")
 
   if (( UI_LIVE )) && command -v gum >/dev/null 2>&1; then

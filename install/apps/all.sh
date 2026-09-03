@@ -115,11 +115,14 @@ run_step_prefetch
 # file. `files/` holds payloads an app installs (unit files, wrapper
 # scripts); those are never executed as leaves. lib/ is excluded for the
 # same reason.
-mapfile -t _oniomarchy_app_list < <(
-  find "$ONIOMARCHY_APPS" -mindepth 2 -name '*.sh' \
-    -not -path "$ONIOMARCHY_APPS/lib/*" \
-    -not -path '*/files/*' | sort
-)
+#
+# The full discovery pass already happened in install.sh, which resolved
+# the requested --pack selection (default: core) against every leaf's
+# `# pack:` tag and wrote the result here — see lib/packs.sh. Reading it
+# back rather than re-running `find` keeps this the single source of
+# truth for "what actually gets installed", the same list prefetch.sh
+# was filtered against.
+mapfile -t _oniomarchy_app_list < "$ONIOMARCHY_SELECTED_LEAVES_FILE"
 
 _oniomarchy_apps_total=${#_oniomarchy_app_list[@]}
 _oniomarchy_apps_seen=0

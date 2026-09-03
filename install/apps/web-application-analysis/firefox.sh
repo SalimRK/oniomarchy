@@ -1,4 +1,5 @@
 # firefox — Web Application Analysis
+# pack: core
 #
 # Installs Firefox as Oniomarchy's *security* browser and configures it the
 # way you would by hand anyway: DuckDuckGo, permanent private browsing,

@@ -1,4 +1,5 @@
 # tor — Anonymity
+# pack: core
 #
 # torsocks and iptables ship alongside tor because the toolkit's anonymity
 # story needs both: torsocks to route an arbitrary binary through the SOCKS

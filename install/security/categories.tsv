@@ -41,12 +41,12 @@ masscan	infogather	auto	-
 gobuster	infogather	auto	-
 ffuf	infogather	auto	-
 dirb	infogather	auto	-
-maltego	infogather	auto	-
 theharvester-git	infogather	auto	-
 recon-ng	infogather	auto	-
 sherlock	infogather	auto	-
 nikto	vuln	auto	-
 nuclei	vuln	auto	-
+sslscan	vuln	auto	-
 sqlmap	web	auto	-
 wpscan	web	auto	-
 burpsuite	web	auto	-
@@ -56,11 +56,12 @@ john	password	collapse	john
 hydra	password	auto	-
 hashcat	password	collapse	hashcat
 wordlists	password	data	/usr/share/wordlists
-rockyou	password	data	/usr/share/dict
 seclists	password	data	/usr/share/doc/seclists
 aircrack-ng	wireless	auto	-
 wifite	wireless	auto	-
 kismet	wireless	auto	-
+fern-wifi-cracker-git	wireless	auto	-
+airgeddon	wireless	auto	-
 rtl-sdr	sdr	auto	-
 hackrf	sdr	auto	-
 airspy	sdr	auto	-
@@ -77,6 +78,7 @@ supersdr	sdr	auto	-
 dump1090-git	sdr	auto	-
 cubicsdr	sdr	auto	-
 sdrangel-bin	sdr	auto	-
+chirp-next	sdr	auto	-
 ghidra	re	auto	-
 radare2	re	auto	-
 jadx	re	auto	-
@@ -93,6 +95,7 @@ bettercap	sniff	auto	-
 responder	sniff	auto	-
 impacket	postex	auto	-
 sliver	postex	auto	-
+peass-ng	postex	auto	-
 powershell-empire-git	postex	auto	-
 volatility3	forensics	auto	-
 foremost	forensics	auto	-
@@ -102,6 +105,7 @@ perl-image-exiftool	forensics	auto	-
 mat2	forensics	auto	-
 steghide	forensics	auto	-
 autopsy	forensics	auto	-
+maltego	reporting	auto	-
 cherrytree	reporting	auto	-
 eyewitness-git	reporting	auto	-
 faraday-bin	reporting	auto	-

@@ -12,6 +12,7 @@
 # lib/clean-build-path.sh) since this invokes python3/pip directly — same
 # risk of silently building against mise's Python instead of the system
 # one that bit theharvester-git and wfuzz.
+# pack: core
 _oniomarchy_clean_build_path
 
 _hexstrike_dir="$HOME/.local/share/oniomarchy/hexstrike-ai"

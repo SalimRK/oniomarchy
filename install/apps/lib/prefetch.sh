@@ -15,11 +15,19 @@
 # -Sw is download-only: it never installs, never touches the local
 # package database beyond the sync it already did, and is safe to
 # interrupt.
+#
+# Scoped to the leaves install.sh actually selected (ONIOMARCHY_SELECTED_
+# LEAVES_FILE, written by lib/packs.sh), not the whole apps/ tree — a
+# `--pack sdr` run must not download official packages for the other 70+
+# apps it isn't going to install. See notes/pack-design.md's "the trap".
 
 _oniomarchy_prefetch() {
-  local -a pkgs
+  local -a leaves pkgs
+  mapfile -t leaves < "$ONIOMARCHY_SELECTED_LEAVES_FILE"
+  (( ${#leaves[@]} == 0 )) && return 0
+
   mapfile -t pkgs < <(
-    grep -rhoP '^\s*pkg_official\s+\K.*' "$ONIOMARCHY_INSTALL/apps" |
+    grep -hoP '^\s*pkg_official\s+\K.*' "${leaves[@]}" |
       tr ' ' '\n' | grep -v '^$' | sort -u
   )
 

@@ -1,4 +1,5 @@
 # theharvester — Information Gathering
+# pack: core
 #
 # Three separate fixes, all of them theHarvester's alone — which is why
 # they now live here instead of in a shared aur-patches.sh:
