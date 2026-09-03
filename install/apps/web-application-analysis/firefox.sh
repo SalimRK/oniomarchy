@@ -31,9 +31,8 @@
 
 pkg_official firefox
 
-# The public site. Temporary domain until oniomarchy.com is bought — change
-# this one line then, it is the only place either URL appears.
-oniomarchy_site_url="https://oniomarchy.sraclb.com"
+# The public site.
+oniomarchy_site_url="https://oniomarchy.com"
 oniomarchy_repo_url="https://github.com/SalimRK/oniomarchy"
 
 # --- version guard --------------------------------------------------------
