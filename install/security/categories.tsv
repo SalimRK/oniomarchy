@@ -59,6 +59,13 @@ wordlists	password	data	/usr/share/wordlists
 seclists	password	data	/usr/share/doc/seclists
 aircrack-ng	wireless	auto	-
 wifite	wireless	auto	-
+reaver	wireless	auto	-
+bully	wireless	auto	-
+cowpatty	wireless	auto	-
+hostapd	wireless	auto	-
+pixiewps	wireless	auto	-
+hcxdumptool	wireless	auto	-
+hcxtools	wireless	auto	-
 kismet	wireless	auto	-
 fern-wifi-cracker-git	wireless	auto	-
 airgeddon	wireless	auto	-
