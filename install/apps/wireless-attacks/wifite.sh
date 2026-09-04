@@ -11,3 +11,7 @@ pkg_official cowpatty
 pkg_official hostapd
 # reaver's own pixie-dust mode shells out to this; not in reaver's own deps
 pkg_official pixiewps
+# PMKID/handshake capture wifite also shells out to (separate pkg from hcxtools below)
+pkg_official hcxdumptool
+# handshake-to-hashcat-format conversion wifite also shells out to (ships hcxpcapngtool)
+pkg_official hcxtools
