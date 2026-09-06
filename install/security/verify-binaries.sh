@@ -56,6 +56,18 @@ declare -A oniomarchy_custom_action
 # polkit dialog is the password prompt, so this still needs no terminal.
 oniomarchy_custom_action["fern"]="oniomarchy-fern-launch"
 
+# gophish: the /usr/bin/gophish binary reads VERSION/config.json/db/ and
+# writes gophish.db + its admin cert all relative to the current working
+# directory, and the package's assets live in a root-owned, non-writable
+# /usr/share/gophish — so run bare (as the generic tool-help CLI branch
+# would) it dies instantly on `open ./VERSION`. oniomarchy-gophish
+# (installed by install-scripts.sh) seeds a writable per-user data dir and
+# runs it from there. gophish is a server that stays in the foreground and
+# prints its generated admin password, so it's launched in a terminal;
+# `exec bash` afterwards leaves a shell if it exits (e.g. a port already in
+# use) so the error stays readable. See notes/install-issues.md.
+oniomarchy_custom_action["gophish"]="omarchy-launch-tui bash -c 'oniomarchy-gophish; exec bash'"
+
 # Action for a given binary: a custom override above, else direct launch
 # (no terminal) if it's a known GUI app via a real .desktop Exec= target,
 # else open a terminal showing the tool's own usage and hand off to an
