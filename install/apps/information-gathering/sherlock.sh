@@ -1,3 +1,3 @@
 # sherlock — Information Gathering
 # pack: core
-pkg_aur sherlock
+pkg_repo sherlock

@@ -1,2 +1,2 @@
 # airgeddon — Wireless Attacks
-pkg_aur airgeddon
+pkg_repo airgeddon

@@ -109,6 +109,13 @@ unset _oniomarchy_pack
 # notes/pack-design.md's "the trap".
 ONIOMARCHY_SELECTED_LEAVES_FILE="$(mktemp -t oniomarchy-leaves.XXXXXXXX)"
 export ONIOMARCHY_SELECTED_LEAVES_FILE
+
+# What [oniomarchy] serves, one package name per line, written by
+# install/repo/enable.sh and read by lib/pkg.sh's pkg_repo. A file rather
+# than a variable because lib/pkg.sh is sourced into each leaf's own bash
+# process, which a variable set here would not reach.
+ONIOMARCHY_REPO_PKGS="$(mktemp -t oniomarchy-repo-pkgs.XXXXXXXX)"
+export ONIOMARCHY_REPO_PKGS
 oniomarchy_pack_resolve "${ONIOMARCHY_PACK_ARGS[@]}" > "$ONIOMARCHY_SELECTED_LEAVES_FILE"
 ONIOMARCHY_PACK_SUMMARY="${ONIOMARCHY_PACK_ARGS[*]}"
 export ONIOMARCHY_PACK_SUMMARY
@@ -170,7 +177,7 @@ _oniomarchy_cleanup() {
   if [[ -n ${_oniomarchy_sudo_keepalive:-} ]]; then
     kill "$_oniomarchy_sudo_keepalive" 2>/dev/null || true
   fi
-  rm -f "$ONIOMARCHY_STATUS" "$ONIOMARCHY_SELECTED_LEAVES_FILE"
+  rm -f "$ONIOMARCHY_STATUS" "$ONIOMARCHY_SELECTED_LEAVES_FILE" "$ONIOMARCHY_REPO_PKGS"
   (( _oniomarchy_keep_log )) || rm -f "$ONIOMARCHY_LOG"
 }
 trap '_oniomarchy_cleanup $?' EXIT
@@ -188,10 +195,10 @@ source "$ONIOMARCHY_INSTALL/helpers/logging.sh"
 source "$ONIOMARCHY_INSTALL/preflight/all.sh"
 
 # Ask once, up front, before anything goes quiet. `omarchy pkg add` is
-# `sudo pacman -S --noconfirm` and `omarchy pkg aur add` is `yay -S
-# --noconfirm`, so the password is the only interactive thing in the
-# whole run — but in quiet mode its prompt would be swallowed by the log
-# and the operator would sit watching a spinner that is waiting on them.
+# `sudo pacman -S --noconfirm`, and strap.sh (the repo/ step below) needs
+# root too, so the password is the only interactive thing in the whole
+# run — but in quiet mode its prompt would be swallowed by the log and
+# the operator would sit watching a spinner that is waiting on them.
 if ! sudo -n true 2>/dev/null; then
   ui_note "This installer needs administrator access to install packages."
   ui_step_stop_live
@@ -202,6 +209,12 @@ fi
 _oniomarchy_sudo_keepalive=$!
 
 # --- the install ----------------------------------------------------------
+
+# Before apps/, deliberately: every non-official package below comes from
+# [oniomarchy] as a signed binary, and apps/all.sh's very first act is to
+# prefetch ~80 of them. A repository problem has to stop the run here,
+# where nothing has been downloaded or built yet.
+source "$ONIOMARCHY_INSTALL/repo/all.sh"
 
 source "$ONIOMARCHY_INSTALL/apps/all.sh"
 source "$ONIOMARCHY_INSTALL/security/all.sh"

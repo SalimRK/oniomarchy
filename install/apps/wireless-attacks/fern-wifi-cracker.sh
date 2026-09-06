@@ -1,5 +1,5 @@
 # fern-wifi-cracker — Wireless Attacks
-pkg_aur fern-wifi-cracker-git
+pkg_repo fern-wifi-cracker-git
 
 # fern is architecturally built to run as root (writes into its own
 # install dir, needs raw-socket access). Neither `sudo fern` nor plain

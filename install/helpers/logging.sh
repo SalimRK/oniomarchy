@@ -6,11 +6,12 @@
 # name comes from the table below rather than from a second argument, for
 # the same reason.
 
-# Display names for the 13 non-app steps. A path not listed here falls
+# Display names for the 14 non-app steps. A path not listed here falls
 # back to a name derived from the path, so a new leaf is never nameless —
 # but an entry here reads better and costs one line.
 declare -A ONIOMARCHY_STEP_LABELS=(
   [preflight/require-omarchy.sh]="Preflight"
+  [repo/enable.sh]="Binary repository"
   [security/install-scripts.sh]="Security · helper scripts"
   [security/verify-binaries.sh]="Security · discover binaries"
   [security/install-webapps.sh]="Security · web apps"

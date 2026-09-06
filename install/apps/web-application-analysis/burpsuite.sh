@@ -1,2 +1,2 @@
 # burpsuite — Web Application Analysis
-pkg_aur burpsuite
+pkg_repo burpsuite

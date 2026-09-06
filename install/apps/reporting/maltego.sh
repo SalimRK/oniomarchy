@@ -1,12 +1,12 @@
 # maltego — Reporting Tools
 # pack: core
-pkg_aur maltego
+pkg_repo maltego
 
 # Maltego's NetBeans-platform launcher tries to enable Java's Security
 # Manager, which JDK 24+ permanently removed (JEP 486) — a fatal
 # "Enabling a Security Manager is not supported" VM-boot error on any
 # system whose default `java` is JDK 24+. The package correctly depends
-# on java-environment=17 (pacman/yay resolve that to jdk17-openjdk
+# on java-environment=17 (pacman resolves that to jdk17-openjdk
 # automatically, no separate pkg_official needed here), but the launcher
 # only picks it up if told to: it reads a user-level override at
 # ~/.maltego/<version>/etc/maltego.conf, sourced after — and overriding —
@@ -23,7 +23,16 @@ pkg_aur maltego
 # it rather than checking first. Verified live 2026-09-03: reproduced the
 # exact VM-boot crash, applied this fix, relaunched from the real
 # Security menu — Maltego's main window and welcome dialog both opened.
+# The suffix is READ from the package's own conf, not assumed — Maltego
+# changes it with every release and it is the whole address of the file
+# being written. The literal below is only the fallback for a conf that
+# cannot be read at all, and it tracks whatever [oniomarchy] currently
+# ships: v4.12.1, confirmed by extracting opt/maltego/etc/maltego.conf
+# straight out of maltego-4.12.1-1-any.pkg.tar.zst (2026-09-06, bumped
+# from a stale v4.8.1). A wrong fallback is silent — the file lands in a
+# directory the launcher never reads, and Maltego fails exactly as if
+# nothing had been written.
 maltego_userdir_suffix=$(grep -oP 'default_userdir="\$\{DEFAULT_USERDIR_ROOT\}/\K[^"]+' /opt/maltego/etc/maltego.conf)
-maltego_userdir="$HOME/.maltego/${maltego_userdir_suffix:-v4.8.1}/etc"
+maltego_userdir="$HOME/.maltego/${maltego_userdir_suffix:-v4.12.1}/etc"
 mkdir -p "$maltego_userdir"
 echo 'jdkhome="/usr/lib/jvm/java-17-openjdk"' > "$maltego_userdir/maltego.conf"

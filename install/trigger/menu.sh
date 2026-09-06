@@ -85,6 +85,36 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
     echo "==> [trigger/menu] python3 not available — skipping trigger.pentest.http-server entry" >&2
   fi
 
+  # Remmina: the toolkit's remote-desktop client, reachable directly here
+  # rather than from the Security menu or the Services submenu.
+  #
+  # It is in neither of those by design. install/security/categories.tsv
+  # covers pentest tools by category and no services/ package has a row
+  # there; trigger.pentest.services.* covers things with a systemd unit to
+  # start and stop, and remmina is a GUI client with no daemon. It used to
+  # have a natural neighbour in the RDP row, but xrdp was dropped from the
+  # toolkit on 2026-09-06 (it serves an X session; Oniomarchy is
+  # Wayland-only Hyprland), leaving remmina with nowhere to be found. This
+  # entry is that home.
+  #
+  # `uwsm-app --` with no terminal, the same launch this repo uses for
+  # every other real GUI app — unlike revshell and http-server above,
+  # there is nothing to prompt for and nothing to keep a terminal open
+  # around.
+  #
+  # Icon: md-remote_desktop (0xF08B9), resolved out of the installed
+  # JetBrainsMono Nerd Font's cmap by glyph NAME, not picked by eye and
+  # not hand-typed as a glyph (see feedback_pua_glyph_transcription
+  # memory).
+  if command -v remmina >/dev/null 2>&1; then
+    oniomarchy_remmina_icon=$(printf '%b' '\UF08B9')
+    printf '  "trigger.pentest.remmina": {"icon":"%s","label":"Remote Desktop","action":"%s"},\n' \
+      "$(oniomarchy_jesc "$oniomarchy_remmina_icon")" \
+      "$(oniomarchy_jesc "uwsm-app -- remmina")"
+  else
+    echo "==> [trigger/menu] remmina not installed — skipping trigger.pentest.remmina entry" >&2
+  fi
+
   # Trust proxy CA: fetch an intercepting proxy's CA certificate and add it
   # to the system trust store, so Firefox/Chromium/curl stop throwing
   # certificate errors on every HTTPS page routed through Burp or Caido.

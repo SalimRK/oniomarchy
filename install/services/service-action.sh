@@ -2,7 +2,7 @@
 #
 # Root-owned start/stop/restart target for services menu entries that don't
 # need the confirm-before-enable gate (samba, vsftpd, postgresql — see
-# services-confirm-action.sh for sshd/xrdp). Installed to
+# services-confirm-action.sh for sshd/beef). Installed to
 # /usr/local/bin/service-action by install/services/install-scripts.sh,
 # invoked via `pkexec service-action <start|stop|restart> <unit...>` since
 # it's triggered from a background menu click, not a visible terminal (see

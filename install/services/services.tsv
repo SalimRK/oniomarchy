@@ -6,8 +6,8 @@
 # label is purpose-based (what the service is actually used for on this
 # machine), not the raw package/unit name, per user request.
 # confirm: yes = gate Start/Restart behind a gum-confirm prompt in a real
-#          terminal (CLAUDE.md's confirm-before-enable rule — SSH/RDP open
-#          remote-access attack surface); no = silent pkexec action, no
+#          terminal (CLAUDE.md's confirm-before-enable rule — SSH and BeEF
+#          open remote-access attack surface); no = silent pkexec action, no
 #          terminal, matching trigger.pentest.mac-randomize.
 #          Stop never confirms either way.
 #
@@ -17,6 +17,14 @@
 #
 # samba (SMB Fileserver) and vsftpd (FTP) were removed 2026-08-27 — dropped
 # entirely rather than kept as toggleable services, per user decision.
+#
+# xrdp (RDP) was removed 2026-09-06, the same way: dropped from the toolkit,
+# not deprioritized. xrdp serves an X session, and Oniomarchy is Wayland-only
+# Hyprland — it was never going to hand a useful desktop to a connecting
+# client here, which is why [oniomarchy] declined to package it. There is no
+# inbound remote desktop in this menu as a result. The outbound half of that
+# story is remmina (install/apps/services/remmina.sh), a GUI client with no
+# daemon and so no row here; it is reachable from Trigger > Pentest instead.
 #
 # postgresql was briefly labeled "Metasploit" 2026-08-27, then corrected to
 # "Database" the same day: this row only toggles postgresql.service itself,
@@ -36,9 +44,8 @@
 # beef.service) and installed by install-scripts.sh, not package-owned;
 # verify-units.sh skips the pacman-ownership check for those. beef is
 # confirm-gated: it binds 0.0.0.0:3000 with default credentials beef/beef
-# out of the box, a comparable exposure to SSH/RDP.
+# out of the box, a comparable exposure to SSH.
 sshd	SSH	openssh	yes	sshd.service
-xrdp	RDP	xrdp	yes	xrdp.service	xrdp-sesman.service
 postgresql	Database	postgresql	no	postgresql.service
 apache	Apache Webserver	apache	no	httpd.service
 nginx	Nginx Webserver	nginx	no	nginx.service

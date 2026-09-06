@@ -1,3 +1,3 @@
 # ffuf — Information Gathering
 # pack: core
-pkg_aur ffuf
+pkg_repo ffuf

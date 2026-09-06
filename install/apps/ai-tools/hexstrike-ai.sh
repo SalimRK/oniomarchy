@@ -5,13 +5,14 @@
 # (argparse-based: --debug, --port, default port 8888).
 #
 # Cloned to a user-owned XDG data dir, not /opt — /opt in this repo is
-# reserved for root-owned pacman/AUR package payloads (see python-garak,
-# armitage-git, etc.); this is a plain git clone, not a package.
+# reserved for root-owned pacman package payloads (see armitage-git,
+# maltego, etc.); this is a plain git clone, not a package.
 #
-# PATH is cleaned of mise the same way AUR builds are (see
-# lib/clean-build-path.sh) since this invokes python3/pip directly — same
-# risk of silently building against mise's Python instead of the system
-# one that bit theharvester-git and wfuzz.
+# PATH is cleaned of mise (see lib/clean-build-path.sh) since this invokes
+# python3/pip directly — same risk of silently building against mise's
+# Python instead of the system one that used to bite AUR builds here.
+# This is now the ONLY leaf that needs that: nothing else is built on the
+# user's machine, everything else arrives prebuilt from [oniomarchy].
 # pack: core
 _oniomarchy_clean_build_path
 

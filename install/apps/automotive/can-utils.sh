@@ -1,3 +1,3 @@
 # can-utils — Automotive
 # pack: automotive
-pkg_aur can-utils
+pkg_repo can-utils

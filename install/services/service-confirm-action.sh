@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Root-owned start/stop/restart target for the two services menu entries
-# that need CLAUDE.md's confirm-before-enable UX (sshd, xrdp — enabling
+# that need CLAUDE.md's confirm-before-enable UX (sshd, beef — enabling
 # either opens remote-access attack surface on a machine that's likely
 # carrying client creds/loot on untrusted networks). Installed to
 # /usr/local/bin/service-confirm-action by

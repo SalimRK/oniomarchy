@@ -84,7 +84,6 @@ qspectrumanalyzer	sdr	auto	-
 supersdr	sdr	auto	-
 dump1090-git	sdr	auto	-
 cubicsdr	sdr	auto	-
-sdrangel-bin	sdr	auto	-
 chirp-next	sdr	auto	-
 ghidra	re	auto	-
 radare2	re	auto	-
@@ -115,12 +114,8 @@ autopsy	forensics	auto	-
 maltego	reporting	auto	-
 cherrytree	reporting	auto	-
 eyewitness-git	reporting	auto	-
-faraday-bin	reporting	auto	-
-cutycapt-qt5-git	reporting	auto	-
 social-engineer-toolkit	social	auto	-
 gophish	social	auto	-
 can-utils	automotive	auto	-
-savvycan	automotive	auto	-
-python-garak	ai	auto	-
 hexstrike-ai	ai	manual	hexstrike-server
 metasploit-mcp	ai	manual	msfmcpd

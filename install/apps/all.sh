@@ -46,7 +46,7 @@ _oniomarchy_category_label() {
 # Like helpers/logging.sh's run_step, with two differences: it sources
 # lib/pkg.sh into the leaf's own bash first (shell functions don't cross
 # a process boundary the way exported variables do, so a plain `source
-# "$script"` would leave pkg_official/pkg_aur undefined), and it always
+# "$script"` would leave pkg_official/pkg_repo undefined), and it always
 # returns 0 so a failure is recorded rather than propagated.
 run_app() {
   local script="$1" category_label="$2"
@@ -88,7 +88,7 @@ run_app() {
 # single longest thing in the run and must not look like a hang.
 run_step_prefetch() {
   local elapsed from_line rc errexit_was_set=0
-  ui_step_start "Prefetch official packages"
+  ui_step_start "Prefetch packages"
 
   case $- in *e*) errexit_was_set=1; set +e ;; esac
   ui_exec bash -eE -c 'source "$1"' bash "$ONIOMARCHY_APPS/lib/prefetch.sh"
@@ -100,9 +100,9 @@ run_step_prefetch() {
   # Non-fatal by design (see lib/prefetch.sh) — a stalled mirror here
   # must not stop the run; each app fetches what it needs on its own.
   if (( rc == 0 )); then
-    ui_result ok "Prefetch official packages" "" "$elapsed"
+    ui_result ok "Prefetch packages" "" "$elapsed"
   else
-    ui_result fail "Prefetch official packages" "incomplete" "$elapsed"
+    ui_result fail "Prefetch packages" "incomplete" "$elapsed"
     ui_fail_excerpt "$from_line" "$rc"
     ui_note "Prefetch is non-fatal — each app will fetch what it needs."
   fi

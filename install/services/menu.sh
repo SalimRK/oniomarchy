@@ -63,7 +63,7 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
       oniomarchy_units="$unit1"
       [[ -n $unit2 ]] && oniomarchy_units+=" $unit2"
 
-      # Stop never confirms even for sshd/xrdp (only start/restart can newly
+      # Stop never confirms even for sshd/beef (only start/restart can newly
       # expose the service) — service-confirm-action.sh itself also enforces
       # this, this is just which target script/UI path gets used.
       if [[ $confirm == yes ]]; then

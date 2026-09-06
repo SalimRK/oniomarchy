@@ -1,3 +1,3 @@
 # caido — Web Application Analysis
 # pack: core
-pkg_aur caido-desktop
+pkg_repo caido-desktop

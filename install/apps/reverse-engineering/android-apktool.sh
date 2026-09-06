@@ -1,2 +1,2 @@
 # android-apktool — Reverse Engineering
-pkg_aur android-apktool-bin
+pkg_repo android-apktool-bin

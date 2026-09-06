@@ -1,3 +1,3 @@
 # eyewitness — Reporting Tools
 # pack: core
-pkg_aur eyewitness-git
+pkg_repo eyewitness-git

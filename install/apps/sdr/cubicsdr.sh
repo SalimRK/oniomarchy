@@ -1,2 +1,2 @@
 # cubicsdr — Software Defined Radio
-pkg_aur cubicsdr
+pkg_repo cubicsdr
