@@ -33,14 +33,14 @@ oniomarchy_repo_name=oniomarchy
 if pacman-conf --repo-list 2>/dev/null | grep -qx "$oniomarchy_repo_name"; then
   echo "==> [$oniomarchy_repo_name] is already configured in pacman.conf"
 else
-  # $ONIOMARCHY_STRAP wins, so a machine with the packaging repo checked
-  # out somewhere else — or a future published copy — needs no edit here.
-  # Otherwise the documented sibling layout: the two projects sit next to
-  # each other, not nested.
+  # strap.sh ships in this repo (install/repo/strap.sh), so a plain clone
+  # can install with no second checkout — that was the whole point of
+  # moving it here (2026-09-07). $ONIOMARCHY_STRAP still wins, for anyone
+  # deliberately pointing at a different copy.
   oniomarchy_strap=""
   for oniomarchy_candidate in \
     "${ONIOMARCHY_STRAP:-}" \
-    "$ONIOMARCHY_PATH/../oniomarchy-pkgs/bin/strap.sh"
+    "$ONIOMARCHY_INSTALL/repo/strap.sh"
   do
     [[ -n $oniomarchy_candidate && -f $oniomarchy_candidate ]] || continue
     oniomarchy_strap="$oniomarchy_candidate"
@@ -49,19 +49,17 @@ else
   unset oniomarchy_candidate
 
   if [[ -z $oniomarchy_strap ]]; then
-    cat >&2 <<'MISSING'
-oniomarchy: [oniomarchy] is not configured, and strap.sh could not be found.
+    # This should be unreachable — the script is tracked in this repo — so
+    # if it fires, the checkout itself is incomplete or corrupt.
+    cat >&2 <<MISSING
+oniomarchy: [oniomarchy] is not configured, and strap.sh is missing.
 
-Oniomarchy installs its tools as signed binaries from [oniomarchy]. It
-does not build them from the AUR, so this repository is required rather
-than preferred.
+Expected it at: $ONIOMARCHY_INSTALL/repo/strap.sh
 
-strap.sh lives in the sibling oniomarchy-pkgs project. Either:
+That file ships with this repository, so a missing one means an
+incomplete checkout. Re-clone, or point at a copy explicitly:
 
-  git clone <oniomarchy-pkgs> ../oniomarchy-pkgs   # next to this repo
-  ONIOMARCHY_STRAP=/path/to/strap.sh ./install.sh  # or point at it
-
-Running it by hand does the same job:  sudo bash bin/strap.sh
+  ONIOMARCHY_STRAP=/path/to/strap.sh ./install.sh
 MISSING
     exit 1
   fi
