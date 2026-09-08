@@ -68,21 +68,55 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
     echo "==> [trigger/menu] ncat not available — skipping trigger.pentest.revshell entry" >&2
   fi
 
-  # Quick HTTP file server: prompts for a directory (blank = $HOME) and a
-  # port (blank = 8000, python's own default), then opens a terminal running
-  # python3 -m http.server from that directory. Uses python3 explicitly
-  # (not python) since this machine's mise shim sits ahead of system python
-  # on PATH — see CLAUDE.md's mise note — and python3 is unaffected.
-  # Foreground in the terminal like revshell: closing the window kills the
-  # server, nothing lingers as a background daemon.
+  # Quick HTTP file server: a submenu (changed 2026-09-08 from a single
+  # leaf — T21 in notes/ideas-and-todos.md) so two PEASS-ng shortcuts can
+  # sit alongside the original pick-your-own-directory prompt. All three
+  # share the same shape: prompt for a port (blank = 8000, python's own
+  # default), then open a terminal running python3 -m http.server from a
+  # directory, foreground like revshell — closing the window kills the
+  # server, nothing lingers as a background daemon. Uses python3
+  # explicitly (not python) since this machine's mise shim sits ahead of
+  # system python on PATH — see CLAUDE.md's mise note — and python3 is
+  # unaffected.
+  #
+  # linPEAS/winPEAS skip the directory prompt entirely — pre-pointed at
+  # peass-ng's real installed paths, confirmed via `pacman -Ql peass-ng`
+  # rather than guessed (/usr/share/peass-ng/linux,
+  # /usr/share/peass-ng/windows) — so hosting a PEASS script for a target
+  # to pull down is one prompt instead of two. Each gated on its directory
+  # actually existing: peass-ng ships no binary onto PATH to `command -v`,
+  # just files under /usr/share, so a directory check is this pair's
+  # equivalent of the "no entry for something not actually installed"
+  # rule verify-binaries.sh/webapps.tsv apply elsewhere.
   if command -v python3 >/dev/null 2>&1; then
     oniomarchy_httpserver_icon=$(printf '%b' '\UF019')
-    oniomarchy_httpserver_action='dir=$(omarchy-menu-input "Directory (blank = home)") && dir="${dir:-$HOME}" && port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "cd \"$dir\" && python3 -m http.server $port; exec bash"'
-    printf '  "trigger.pentest.http-server": {"icon":"%s","label":"HTTP File Server","action":"%s"},\n' \
+    printf '  "trigger.pentest.http-server": {"icon":"%s","label":"HTTP File Server"},\n' \
+      "$(oniomarchy_jesc "$oniomarchy_httpserver_icon")"
+
+    oniomarchy_httpserver_custom_action='dir=$(omarchy-menu-input "Directory (blank = home)") && dir="${dir:-$HOME}" && port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "cd \"$dir\" && python3 -m http.server $port; exec bash"'
+    printf '  "trigger.pentest.http-server.custom": {"icon":"%s","label":"Custom Directory","action":"%s"},\n' \
       "$(oniomarchy_jesc "$oniomarchy_httpserver_icon")" \
-      "$(oniomarchy_jesc "$oniomarchy_httpserver_action")"
+      "$(oniomarchy_jesc "$oniomarchy_httpserver_custom_action")"
+
+    if [[ -d /usr/share/peass-ng/linux ]]; then
+      oniomarchy_linpeas_action='port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "cd /usr/share/peass-ng/linux && python3 -m http.server $port; exec bash"'
+      printf '  "trigger.pentest.http-server.linpeas": {"icon":"%s","label":"Serve linPEAS","action":"%s"},\n' \
+        "$(oniomarchy_jesc "$oniomarchy_httpserver_icon")" \
+        "$(oniomarchy_jesc "$oniomarchy_linpeas_action")"
+    else
+      echo "==> [trigger/menu] /usr/share/peass-ng/linux not found — skipping trigger.pentest.http-server.linpeas entry" >&2
+    fi
+
+    if [[ -d /usr/share/peass-ng/windows ]]; then
+      oniomarchy_winpeas_action='port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "cd /usr/share/peass-ng/windows && python3 -m http.server $port; exec bash"'
+      printf '  "trigger.pentest.http-server.winpeas": {"icon":"%s","label":"Serve winPEAS","action":"%s"},\n' \
+        "$(oniomarchy_jesc "$oniomarchy_httpserver_icon")" \
+        "$(oniomarchy_jesc "$oniomarchy_winpeas_action")"
+    else
+      echo "==> [trigger/menu] /usr/share/peass-ng/windows not found — skipping trigger.pentest.http-server.winpeas entry" >&2
+    fi
   else
-    echo "==> [trigger/menu] python3 not available — skipping trigger.pentest.http-server entry" >&2
+    echo "==> [trigger/menu] python3 not available — skipping trigger.pentest.http-server entries" >&2
   fi
 
   # Remmina: the toolkit's remote-desktop client, reachable directly here
