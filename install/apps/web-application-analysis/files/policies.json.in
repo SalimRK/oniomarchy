@@ -20,8 +20,6 @@
     "PromptForDownloadLocation": true,
     "DisableTelemetry": true,
 
-    "Homepage": { "URL": "@HOMEPAGE@", "StartPage": "homepage" },
-
     "Certificates": { "ImportEnterpriseRoots": true },
 
 @BOOKMARKS@

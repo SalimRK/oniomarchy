@@ -125,12 +125,12 @@ sed -i "${oniomarchy_last_row}s/},$/}/" "$oniomarchy_bookmarks_file"
 
 # --- render ---------------------------------------------------------------
 
-awk -v bookmarks="$oniomarchy_bookmarks_file" -v homepage="$oniomarchy_site_url" '
+awk -v bookmarks="$oniomarchy_bookmarks_file" '
   /@BOOKMARKS@/ {
     while ((getline line < bookmarks) > 0) print line
     next
   }
-  { gsub(/@HOMEPAGE@/, homepage); print }
+  { print }
 ' "$ONIOMARCHY_APP_DIR/files/policies.json.in" > "$oniomarchy_policies_file"
 
 # A malformed policies.json is ignored SILENTLY by Firefox — no error, no
