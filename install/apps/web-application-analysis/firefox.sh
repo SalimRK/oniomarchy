@@ -50,11 +50,18 @@ fi
 
 # --- bookmarks ------------------------------------------------------------
 #
-# Rendered from install/security/webapps.tsv rather than hardcoded into the
-# template. That file is already the single source of truth for these URLs
-# (it drives the desktop launchers install-webapps.sh creates); a second
-# hand-maintained copy would drift the moment either is edited. Same
-# reasoning as discovering app leaves with `find` instead of a manifest.
+# Two folders, not one flat list: "Webapps" (rendered from
+# install/security/webapps.tsv rather than hardcoded into the template —
+# that file is already the single source of truth for these URLs, driving
+# the desktop launchers install-webapps.sh creates too; a second
+# hand-maintained copy would drift the moment either is edited, same
+# reasoning as discovering app leaves with `find` instead of a manifest)
+# and "Oniomarchy" (the four project/upstream links). The Bookmarks policy
+# groups any rows sharing the same Folder string, so two folder names is
+# all it takes — no nesting support needed or used.
+
+oniomarchy_omarchy_site_url="https://omarchy.org"
+oniomarchy_omarchy_repo_url="https://github.com/basecamp/omarchy"
 
 # JSON-string-escape a value (backslash and double-quote only), matching
 # oniomarchy_jesc in install/*/menu.sh.
@@ -65,9 +72,22 @@ oniomarchy_jesc() {
   printf '%s' "$s"
 }
 
+# Without a Favicon, the Bookmarks policy leaves every entry showing
+# Firefox's generic globe until the user visits that page once themselves.
+# Derived as scheme://host/favicon.ico from each bookmark's own URL rather
+# than hardcoded per site — a first-party request to the site itself (no
+# third-party favicon-proxy lookup), consistent with this browser's
+# privacy design, and it needs no per-entry maintenance as webapps.tsv
+# grows. Not every site serves a real icon at that fixed path; a 404
+# there just means Firefox falls back to the generic globe for that one
+# entry, same as today.
+oniomarchy_favicon_url() {
+  [[ $1 =~ ^(https?://[^/]+) ]] && printf '%s/favicon.ico' "${BASH_REMATCH[1]}"
+}
+
 oniomarchy_bookmark_row() {
-  printf '      {"Title":"%s","URL":"%s","Placement":"toolbar","Folder":"Oniomarchy"},\n' \
-    "$(oniomarchy_jesc "$1")" "$(oniomarchy_jesc "$2")"
+  printf '      {"Title":"%s","URL":"%s","Favicon":"%s","Placement":"toolbar","Folder":"%s"},\n' \
+    "$(oniomarchy_jesc "$1")" "$(oniomarchy_jesc "$2")" "$(oniomarchy_jesc "$(oniomarchy_favicon_url "$2")")" "$(oniomarchy_jesc "$3")"
 }
 
 oniomarchy_bookmarks_file=$(mktemp)
@@ -76,19 +96,21 @@ trap 'rm -f "$oniomarchy_bookmarks_file" "$oniomarchy_policies_file"' EXIT
 
 {
   echo '    "Bookmarks": ['
-  oniomarchy_bookmark_row "Oniomarchy" "$oniomarchy_site_url"
-  oniomarchy_bookmark_row "Oniomarchy on GitHub" "$oniomarchy_repo_url"
+  oniomarchy_bookmark_row "Oniomarchy" "$oniomarchy_site_url" "Oniomarchy"
+  oniomarchy_bookmark_row "Oniomarchy on GitHub" "$oniomarchy_repo_url" "Oniomarchy"
+  oniomarchy_bookmark_row "Omarchy" "$oniomarchy_omarchy_site_url" "Oniomarchy"
+  oniomarchy_bookmark_row "Omarchy on GitHub" "$oniomarchy_omarchy_repo_url" "Oniomarchy"
 
   oniomarchy_webapps_tsv="$ONIOMARCHY_INSTALL/security/webapps.tsv"
-  oniomarchy_bookmark_count=2
+  oniomarchy_bookmark_count=4
   if [[ -f $oniomarchy_webapps_tsv ]]; then
     while IFS=$'\t' read -r _slug label url _tactic _icon; do
       [[ -z ${label:-} || -z ${url:-} ]] && continue
-      oniomarchy_bookmark_row "$label" "$url"
+      oniomarchy_bookmark_row "$label" "$url" "Webapps"
       oniomarchy_bookmark_count=$(( oniomarchy_bookmark_count + 1 ))
     done < <(grep -v '^[[:space:]]*#' "$oniomarchy_webapps_tsv" | grep -v '^[[:space:]]*$')
   else
-    echo "==> webapps.tsv not found — bookmarking only the project links" >&2
+    echo "==> webapps.tsv not found — bookmarking only the project/upstream links" >&2
   fi
 
   # Trailing comma on the last row is invalid JSON, so close the array by
