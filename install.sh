@@ -216,6 +216,11 @@ _oniomarchy_sudo_keepalive=$!
 # where nothing has been downloaded or built yet.
 source "$ONIOMARCHY_INSTALL/repo/all.sh"
 
+# No install-order dependency on repo/apps (it's a static file copy), but
+# grouped here with repo/ since both install standalone system files
+# outside the package-managed tree. See notes/oniomarchy-cli.md.
+source "$ONIOMARCHY_INSTALL/cli/all.sh"
+
 source "$ONIOMARCHY_INSTALL/apps/all.sh"
 source "$ONIOMARCHY_INSTALL/security/all.sh"
 source "$ONIOMARCHY_INSTALL/services/all.sh"

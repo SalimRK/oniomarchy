@@ -12,6 +12,7 @@
 declare -A ONIOMARCHY_STEP_LABELS=(
   [preflight/require-omarchy.sh]="Preflight"
   [repo/enable.sh]="Binary repository"
+  [cli/install-scripts.sh]="CLI"
   [security/install-scripts.sh]="Security · helper scripts"
   [security/verify-binaries.sh]="Security · discover binaries"
   [security/install-webapps.sh]="Security · web apps"

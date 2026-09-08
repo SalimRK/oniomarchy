@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#
+# Oniomarchy CLI — a terminal-first front door onto the same scripts the
+# Trigger/Security/Services menus already call. Flat `case` dispatch, not
+# a metadata-driven route table like the real omarchy CLI: this has ~6
+# groups / ~20 subcommands wrapping scripts that already exist, not ~40
+# groups under multi-contributor development. Design and rationale:
+# notes/oniomarchy-cli.md.
+#
+# Group logic lives in /usr/local/lib/oniomarchy/oniomarchy-<group>, not
+# on PATH — this dispatcher is the only entry point, unlike
+# oniomarchy-tool-help/oniomarchy-proxy-trust, which are genuinely called
+# directly by JSONC menu actions.
+
+set -euo pipefail
+
+oniomarchy_cli_lib=/usr/local/lib/oniomarchy
+
+usage() {
+  cat <<'USAGE'
+Usage: oniomarchy <group> <verb> [args...]
+
+Groups:
+  tool       list/help/run a pentest tool from the Security menu
+  service    list/start/stop/restart a toggleable service
+  net        revshell, http-server, linpeas/winpeas, proxy-trust, remmina
+  repo       [oniomarchy] binary repo status/strap/remove
+  branding   install/reset the oni branding assets
+  doctor     verify installed tools/services still resolve, report drift
+
+Run `oniomarchy <group> --help` for a group's own subcommands.
+USAGE
+}
+
+if (( $# == 0 )); then
+  usage
+  exit 0
+fi
+
+case "$1" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  tool|service|net|repo|branding|doctor)
+    group="$1"
+    shift
+    exec "$oniomarchy_cli_lib/oniomarchy-$group" "$@"
+    ;;
+  *)
+    echo "oniomarchy: unknown group: $1" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
+esac

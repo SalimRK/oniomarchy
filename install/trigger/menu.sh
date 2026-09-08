@@ -49,9 +49,10 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
   # classic nc binary (from openbsd-netcat, also installed per user
   # request but not used here) — user's own call, ncat has the better
   # feature set (SSL, proxying) and its -lvnp flags behave the same for
-  # this use. No separate installed script/leaf needed: no root required
-  # to listen on a normal (>1024) port, so the whole thing is inline in
-  # the action string. Port entry uses `omarchy-menu-input` (a real
+  # this use. The listener itself lives in install/trigger/revshell.sh
+  # (extracted 2026-09-09, installed as oniomarchy-revshell) so
+  # `oniomarchy net revshell` can call the same logic without duplicating
+  # it — see notes/oniomarchy-cli.md. Port entry uses `omarchy-menu-input` (a real
   # installed Omarchy helper — /usr/share/omarchy/bin/omarchy-menu-input —
   # that summons the same themed omarchy.menu widget as other Omarchy
   # prompts) instead of a plain terminal `read`, per user request; only
@@ -60,7 +61,7 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
   # stay open/interactive there.
   if command -v ncat >/dev/null 2>&1; then
     oniomarchy_revshell_icon=$(printf '%b' '\UF120')
-    oniomarchy_revshell_action='port=$(omarchy-menu-input "Port") && [ -n "$port" ] && exec omarchy-launch-tui bash -c "ncat -lvnp $port; exec bash"'
+    oniomarchy_revshell_action='port=$(omarchy-menu-input "Port") && [ -n "$port" ] && exec omarchy-launch-tui bash -c "oniomarchy-revshell $port; exec bash"'
     printf '  "trigger.pentest.revshell": {"icon":"%s","label":"Reverse Shell Listener","action":"%s"},\n' \
       "$(oniomarchy_jesc "$oniomarchy_revshell_icon")" \
       "$(oniomarchy_jesc "$oniomarchy_revshell_action")"
@@ -88,18 +89,24 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
   # just files under /usr/share, so a directory check is this pair's
   # equivalent of the "no entry for something not actually installed"
   # rule verify-binaries.sh/webapps.tsv apply elsewhere.
+  #
+  # All three bodies now delegate to installed scripts
+  # (install/trigger/http-server.sh, serve-linpeas.sh, serve-winpeas.sh —
+  # extracted 2026-09-09) so `oniomarchy net http-server`/`linpeas`/
+  # `winpeas` can call the same logic without duplicating it — see
+  # notes/oniomarchy-cli.md.
   if command -v python3 >/dev/null 2>&1; then
     oniomarchy_httpserver_icon=$(printf '%b' '\UF019')
     printf '  "trigger.pentest.http-server": {"icon":"%s","label":"HTTP File Server"},\n' \
       "$(oniomarchy_jesc "$oniomarchy_httpserver_icon")"
 
-    oniomarchy_httpserver_custom_action='dir=$(omarchy-menu-input "Directory (blank = home)") && dir="${dir:-$HOME}" && port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "cd \"$dir\" && python3 -m http.server $port; exec bash"'
+    oniomarchy_httpserver_custom_action='dir=$(omarchy-menu-input "Directory (blank = home)") && dir="${dir:-$HOME}" && port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "oniomarchy-http-server \"$dir\" $port; exec bash"'
     printf '  "trigger.pentest.http-server.custom": {"icon":"%s","label":"Custom Directory","action":"%s"},\n' \
       "$(oniomarchy_jesc "$oniomarchy_httpserver_icon")" \
       "$(oniomarchy_jesc "$oniomarchy_httpserver_custom_action")"
 
     if [[ -d /usr/share/peass-ng/linux ]]; then
-      oniomarchy_linpeas_action='port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "cd /usr/share/peass-ng/linux && python3 -m http.server $port; exec bash"'
+      oniomarchy_linpeas_action='port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "oniomarchy-serve-linpeas $port; exec bash"'
       printf '  "trigger.pentest.http-server.linpeas": {"icon":"%s","label":"Serve linPEAS","action":"%s"},\n' \
         "$(oniomarchy_jesc "$oniomarchy_httpserver_icon")" \
         "$(oniomarchy_jesc "$oniomarchy_linpeas_action")"
@@ -108,7 +115,7 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
     fi
 
     if [[ -d /usr/share/peass-ng/windows ]]; then
-      oniomarchy_winpeas_action='port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "cd /usr/share/peass-ng/windows && python3 -m http.server $port; exec bash"'
+      oniomarchy_winpeas_action='port=$(omarchy-menu-input "Port (blank = 8000)") && port="${port:-8000}" && exec omarchy-launch-tui bash -c "oniomarchy-serve-winpeas $port; exec bash"'
       printf '  "trigger.pentest.http-server.winpeas": {"icon":"%s","label":"Serve winPEAS","action":"%s"},\n' \
         "$(oniomarchy_jesc "$oniomarchy_httpserver_icon")" \
         "$(oniomarchy_jesc "$oniomarchy_winpeas_action")"

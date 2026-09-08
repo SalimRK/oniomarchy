@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+#
+# `oniomarchy tool` — list/help/run a pentest tool from the Security Tools
+# menu, without opening the bar. Reads the same generated TSV the menu
+# itself reads (install/security/verify-binaries.sh's output), never
+# install/security/menu.sh, which is entangled with JSONC generation and
+# exposes no data-only function. See notes/oniomarchy-cli.md.
+
+set -euo pipefail
+
+oniomarchy_tool_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$oniomarchy_tool_lib/json.sh"
+
+oniomarchy_tool_tsv="$HOME/.local/state/oniomarchy/security-menu-entries.tsv"
+
+# id -> label, copied from install/security/menu.sh's
+# oniomarchy_security_submenus array (short id, no "security." prefix, no
+# icon column). Keep in sync by hand if that array changes.
+declare -A oniomarchy_tool_category_labels=(
+  [infogather]="Info Gathering"
+  [vuln]="Vuln Analysis"
+  [web]="Web App Analysis"
+  [password]="Password Attacks"
+  [wireless]="Wireless Attacks"
+  [sdr]="SDR"
+  [re]="Reverse Eng"
+  [exploit]="Exploitation Tools"
+  [sniff]="Sniff & Spoof"
+  [postex]="Post Exploitation"
+  [forensics]="Digital Forensics"
+  [reporting]="Reporting Tools"
+  [social]="Social Engineering"
+  [automotive]="Automotive"
+  [ai]="AI Tools"
+  [webapps]="Webapps"
+)
+
+usage() {
+  cat <<'USAGE'
+Usage: oniomarchy tool list [category] [--json]
+       oniomarchy tool help <binary>
+       oniomarchy tool run <binary>
+
+`category` matches the Security menu's own category labels, e.g.
+"Password Attacks". Run `oniomarchy tool list` with no argument to see
+every category.
+USAGE
+}
+
+oniomarchy_tool_require_tsv() {
+  if [[ ! -f $oniomarchy_tool_tsv ]]; then
+    echo "oniomarchy tool: $oniomarchy_tool_tsv not found — run install.sh or 'oniomarchy doctor' first" >&2
+    exit 1
+  fi
+}
+
+oniomarchy_tool_category_id_for_label() {
+  local want="$1" id
+  for id in "${!oniomarchy_tool_category_labels[@]}"; do
+    if [[ ${oniomarchy_tool_category_labels[$id]} == "$want" ]]; then
+      printf '%s' "$id"
+      return 0
+    fi
+  done
+  return 1
+}
+
+cmd_list() {
+  local filter_category="" as_json=0 arg
+  for arg in "$@"; do
+    case "$arg" in
+      --json) as_json=1 ;;
+      *) filter_category="$arg" ;;
+    esac
+  done
+
+  oniomarchy_tool_require_tsv
+
+  local filter_id=""
+  if [[ -n $filter_category ]]; then
+    if ! filter_id=$(oniomarchy_tool_category_id_for_label "$filter_category"); then
+      echo "oniomarchy tool: unknown category: $filter_category" >&2
+      echo >&2
+      echo "Categories:" >&2
+      printf '  %s\n' "${oniomarchy_tool_category_labels[@]}" | sort >&2
+      exit 2
+    fi
+  fi
+
+  if (( as_json )); then
+    local first=1 kind category subcat id_slug label action alias subcat_json
+    printf '['
+    while IFS=$'\t' read -r kind category subcat id_slug label action alias; do
+      [[ $kind == ENTRY ]] || continue
+      [[ -n $filter_id && $category != "$filter_id" ]] && continue
+      (( first )) || printf ','
+      first=0
+      subcat_json="null"
+      [[ $subcat != "-" ]] && subcat_json="\"$(oniomarchy_json_str "$subcat")\""
+      printf '{"category":"%s","subcategory":%s,"id":"%s","label":"%s","command":"%s","package":"%s"}' \
+        "$(oniomarchy_json_str "$category")" "$subcat_json" "$(oniomarchy_json_str "$id_slug")" \
+        "$(oniomarchy_json_str "$label")" "$(oniomarchy_json_str "$action")" "$(oniomarchy_json_str "$alias")"
+    done < "$oniomarchy_tool_tsv"
+    printf ']\n'
+    return
+  fi
+
+  local last_category="" kind category subcat id_slug label action alias
+  while IFS=$'\t' read -r kind category subcat id_slug label action alias; do
+    [[ $kind == ENTRY ]] || continue
+    [[ -n $filter_id && $category != "$filter_id" ]] && continue
+    if [[ $category != "$last_category" ]]; then
+      [[ -n $last_category ]] && echo
+      echo "${oniomarchy_tool_category_labels[$category]:-$category}"
+      last_category="$category"
+    fi
+    if [[ $subcat != "-" ]]; then
+      printf '  [%s] %s\n' "$subcat" "$label"
+    else
+      printf '  %s\n' "$label"
+    fi
+  done < "$oniomarchy_tool_tsv"
+}
+
+cmd_help() {
+  local bin="${1:?usage: oniomarchy tool help <binary>}"
+  exec oniomarchy-tool-help "$bin"
+}
+
+cmd_run() {
+  local bin="${1:?usage: oniomarchy tool run <binary>}"
+  oniomarchy_tool_require_tsv
+  local kind category subcat id_slug label row_action alias action=""
+  while IFS=$'\t' read -r kind category subcat id_slug label row_action alias; do
+    [[ $kind == ENTRY ]] || continue
+    if [[ $id_slug == "$bin" ]]; then
+      action="$row_action"
+      break
+    fi
+  done < "$oniomarchy_tool_tsv"
+  if [[ -z $action ]]; then
+    echo "oniomarchy tool: no tool named '$bin' (see 'oniomarchy tool list')" >&2
+    exit 1
+  fi
+  exec bash -c "$action"
+}
+
+case "${1:-}" in
+  -h|--help|"") usage; exit 0 ;;
+  list) shift; cmd_list "$@" ;;
+  help) shift; cmd_help "$@" ;;
+  run)  shift; cmd_run "$@" ;;
+  *)
+    echo "oniomarchy tool: unknown verb: $1" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
+esac

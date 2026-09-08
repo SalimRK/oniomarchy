@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+#
+# `oniomarchy branding` — install/reset the oni branding assets.
+# `install` runs the mirrored copy of install/themes/branding.sh at
+# /usr/local/share/oniomarchy/install/themes/branding.sh (see
+# install/cli/install-scripts.sh) against the mirrored art under
+# /usr/local/share/oniomarchy/themes/branding/, so this keeps working
+# after the checkout is gone — branding.sh itself is unmodified, it just
+# needs ONIOMARCHY_PATH pointed at the mirror root (the same variable
+# install.sh itself exports at the top, at $ONIOMARCHY_PATH/themes/branding).
+#
+# `reset` is deliberately not reimplemented — branding.sh's own trailing
+# echo already says the undo path is Omarchy's own commands.
+
+set -euo pipefail
+
+oniomarchy_branding_root=/usr/local/share/oniomarchy
+oniomarchy_branding_script="$oniomarchy_branding_root/install/themes/branding.sh"
+
+usage() {
+  cat <<'USAGE'
+Usage: oniomarchy branding install
+       oniomarchy branding reset
+USAGE
+}
+
+cmd_install() {
+  if [[ ! -f $oniomarchy_branding_script ]]; then
+    echo "oniomarchy branding: $oniomarchy_branding_script not found — run install.sh first" >&2
+    exit 1
+  fi
+  ONIOMARCHY_PATH="$oniomarchy_branding_root" exec bash "$oniomarchy_branding_script"
+}
+
+cmd_reset() {
+  omarchy branding about reset
+  omarchy branding screensaver reset
+}
+
+case "${1:-}" in
+  -h|--help|"") usage; exit 0 ;;
+  install) cmd_install ;;
+  reset)   cmd_reset ;;
+  *)
+    echo "oniomarchy branding: unknown verb: $1" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
+esac

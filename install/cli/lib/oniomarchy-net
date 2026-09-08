@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+#
+# `oniomarchy net` — CLI equivalents of the trigger.pentest.* menu
+# entries. Runs in the caller's own foreground terminal (resolved
+# decision, 2026-09-09 — see notes/oniomarchy-cli.md): you're already in
+# a terminal when you type a CLI command, so unlike the JSONC menu
+# actions this does not spawn a second one via omarchy-launch-tui.
+#
+# Each subcommand validates its own args and then execs the already-
+# installed standalone script directly — the same ones the menu itself
+# calls (install/trigger/{revshell,http-server,serve-linpeas,serve-winpeas,
+# proxy-trust}.sh).
+
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage: oniomarchy net revshell <port>
+       oniomarchy net http-server <dir> <port>
+       oniomarchy net linpeas [port]
+       oniomarchy net winpeas [port]
+       oniomarchy net proxy-trust <port|file>
+       oniomarchy net remmina
+
+All of these run in the foreground of the calling terminal (Ctrl-C to
+stop revshell/http-server/linpeas/winpeas).
+USAGE
+}
+
+require_port() {
+  local port="$1" what="$2"
+  if [[ ! $port =~ ^[0-9]+$ ]]; then
+    echo "oniomarchy net $what: not a port number: $port" >&2
+    exit 1
+  fi
+}
+
+cmd_revshell() {
+  local port="${1:?usage: oniomarchy net revshell <port>}"
+  require_port "$port" revshell
+  exec oniomarchy-revshell "$port"
+}
+
+cmd_http_server() {
+  local dir="${1:?usage: oniomarchy net http-server <dir> <port>}"
+  local port="${2:?usage: oniomarchy net http-server <dir> <port>}"
+  require_port "$port" http-server
+  if [[ ! -d $dir ]]; then
+    echo "oniomarchy net http-server: no such directory: $dir" >&2
+    exit 1
+  fi
+  exec oniomarchy-http-server "$dir" "$port"
+}
+
+cmd_linpeas() {
+  local port="${1:-8000}"
+  require_port "$port" linpeas
+  exec oniomarchy-serve-linpeas "$port"
+}
+
+cmd_winpeas() {
+  local port="${1:-8000}"
+  require_port "$port" winpeas
+  exec oniomarchy-serve-winpeas "$port"
+}
+
+cmd_proxy_trust() {
+  local arg="${1:?usage: oniomarchy net proxy-trust <port|file>}"
+  # oniomarchy-proxy-trust itself checks EUID and prints the right sudo
+  # invocation if not root — same as the JSONC menu action, which always
+  # runs it via sudo.
+  exec sudo oniomarchy-proxy-trust "$arg"
+}
+
+cmd_remmina() {
+  exec uwsm-app -- remmina
+}
+
+case "${1:-}" in
+  -h|--help|"") usage; exit 0 ;;
+  revshell)     shift; cmd_revshell "$@" ;;
+  http-server)  shift; cmd_http_server "$@" ;;
+  linpeas)      shift; cmd_linpeas "$@" ;;
+  winpeas)      shift; cmd_winpeas "$@" ;;
+  proxy-trust)  shift; cmd_proxy_trust "$@" ;;
+  remmina)      shift; cmd_remmina "$@" ;;
+  *)
+    echo "oniomarchy net: unknown verb: $1" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
+esac

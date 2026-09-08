@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+#
+# `oniomarchy repo` — [oniomarchy] binary repo status/strap/remove.
+# `strap`/`remove` run the mirrored copy of install/repo/strap.sh at
+# /usr/local/share/oniomarchy/install/repo/strap.sh (see
+# install/cli/install-scripts.sh) rather than the tracked one in this
+# checkout, so this keeps working after the checkout is gone — strap.sh
+# itself is unmodified either way (single canonical copy, see its own
+# header comment and notes/oniomarchy-cli.md).
+#
+# `status` is new, read-only logic: it does not touch strap.sh at all, so
+# it carries none of the trust-anchor/key-rotation risk that file's
+# header warns about. It mirrors checks install/repo/enable.sh and
+# strap.sh --remove already perform elsewhere.
+
+set -euo pipefail
+
+oniomarchy_repo_strap=/usr/local/share/oniomarchy/install/repo/strap.sh
+
+usage() {
+  cat <<'USAGE'
+Usage: oniomarchy repo status
+       oniomarchy repo strap
+       oniomarchy repo remove
+USAGE
+}
+
+oniomarchy_repo_require_mirror() {
+  if [[ ! -f $oniomarchy_repo_strap ]]; then
+    echo "oniomarchy repo: $oniomarchy_repo_strap not found — run install.sh first" >&2
+    exit 1
+  fi
+}
+
+cmd_status() {
+  local configured=no keyring=no synced=no
+
+  grep -q '^\[oniomarchy\]' /etc/pacman.conf 2>/dev/null && configured=yes
+  pacman -Qq oniomarchy-keyring >/dev/null 2>&1 && keyring=yes
+  pacman -Sl oniomarchy >/dev/null 2>&1 && synced=yes
+
+  printf 'pacman.conf [oniomarchy] block:  %s\n' "$configured"
+  printf 'oniomarchy-keyring installed:    %s\n' "$keyring"
+  printf 'repo reachable/synced:           %s\n' "$synced"
+
+  if [[ $configured == yes && $keyring == yes && $synced == yes ]]; then
+    echo
+    echo "[oniomarchy] is fully configured."
+  else
+    echo
+    echo "[oniomarchy] is not fully configured — run 'oniomarchy repo strap'."
+  fi
+}
+
+cmd_strap() {
+  oniomarchy_repo_require_mirror
+  exec sudo bash "$oniomarchy_repo_strap"
+}
+
+cmd_remove() {
+  oniomarchy_repo_require_mirror
+  exec sudo bash "$oniomarchy_repo_strap" --remove
+}
+
+case "${1:-}" in
+  -h|--help|"") usage; exit 0 ;;
+  status) cmd_status ;;
+  strap)  cmd_strap ;;
+  remove) cmd_remove ;;
+  *)
+    echo "oniomarchy repo: unknown verb: $1" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
+esac

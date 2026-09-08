@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+#
+# `oniomarchy service` — list/start/stop/restart a toggleable service,
+# without opening the bar. Reads the same generated TSV the menu itself
+# reads (install/services/verify-units.sh's output). The start/stop/
+# restart branch below is a copy of install/services/menu.sh's own
+# pkexec-vs-confirm logic (that script also unconditionally writes JSONC,
+# so it isn't safe to call into as a subroutine). See
+# notes/oniomarchy-cli.md.
+
+set -euo pipefail
+
+oniomarchy_service_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$oniomarchy_service_lib/json.sh"
+
+oniomarchy_service_tsv="$HOME/.local/state/oniomarchy/services-menu-entries.tsv"
+
+usage() {
+  cat <<'USAGE'
+Usage: oniomarchy service list [--json]
+       oniomarchy service start|stop|restart <id>
+USAGE
+}
+
+oniomarchy_service_require_tsv() {
+  if [[ ! -f $oniomarchy_service_tsv ]]; then
+    echo "oniomarchy service: $oniomarchy_service_tsv not found — run install.sh or 'oniomarchy doctor' first" >&2
+    exit 1
+  fi
+}
+
+oniomarchy_service_status() {
+  local unit1="$1" unit2="$2"
+  if systemctl is-active --quiet "$unit1" && { [[ -z $unit2 ]] || systemctl is-active --quiet "$unit2"; }; then
+    printf 'active'
+  else
+    printf 'inactive'
+  fi
+}
+
+# Sets oniomarchy_found_{label,confirm,unit1,unit2} on success.
+oniomarchy_service_find() {
+  local want="$1" id label confirm unit1 unit2
+  while IFS=$'\t' read -r id label confirm unit1 unit2; do
+    [[ -z $id ]] && continue
+    if [[ $id == "$want" ]]; then
+      oniomarchy_found_label="$label"
+      oniomarchy_found_confirm="$confirm"
+      oniomarchy_found_unit1="$unit1"
+      oniomarchy_found_unit2="$unit2"
+      return 0
+    fi
+  done < "$oniomarchy_service_tsv"
+  return 1
+}
+
+cmd_list() {
+  local as_json=0
+  [[ "${1:-}" == --json ]] && as_json=1
+
+  oniomarchy_service_require_tsv
+
+  local id label confirm unit1 unit2 status confirm_required first=1
+  if (( as_json )); then
+    printf '['
+    while IFS=$'\t' read -r id label confirm unit1 unit2; do
+      [[ -z $id ]] && continue
+      status=$(oniomarchy_service_status "$unit1" "$unit2")
+      confirm_required=false
+      [[ $confirm == yes ]] && confirm_required=true
+      (( first )) || printf ','
+      first=0
+      if [[ -n $unit2 ]]; then
+        printf '{"id":"%s","label":"%s","units":["%s","%s"],"confirm_required":%s,"status":"%s"}' \
+          "$(oniomarchy_json_str "$id")" "$(oniomarchy_json_str "$label")" \
+          "$(oniomarchy_json_str "$unit1")" "$(oniomarchy_json_str "$unit2")" "$confirm_required" "$status"
+      else
+        printf '{"id":"%s","label":"%s","units":["%s"],"confirm_required":%s,"status":"%s"}' \
+          "$(oniomarchy_json_str "$id")" "$(oniomarchy_json_str "$label")" \
+          "$(oniomarchy_json_str "$unit1")" "$confirm_required" "$status"
+      fi
+    done < "$oniomarchy_service_tsv"
+    printf ']\n'
+    return
+  fi
+
+  while IFS=$'\t' read -r id label confirm unit1 unit2; do
+    [[ -z $id ]] && continue
+    status=$(oniomarchy_service_status "$unit1" "$unit2")
+    printf '%-8s %-12s %s\n' "$status" "$id" "$label"
+  done < "$oniomarchy_service_tsv"
+}
+
+cmd_action() {
+  local action="$1" id="${2:?usage: oniomarchy service $1 <id>}"
+  oniomarchy_service_require_tsv
+  if ! oniomarchy_service_find "$id"; then
+    echo "oniomarchy service: no service named '$id' (see 'oniomarchy service list')" >&2
+    exit 1
+  fi
+
+  # Stop never confirms even for sshd/beef — service-confirm-action.sh
+  # itself also enforces this; this is just which target script/UI path
+  # gets used.
+  if [[ $oniomarchy_found_confirm == yes ]]; then
+    exec omarchy-launch-tui bash -c "sudo service-confirm-action '$oniomarchy_found_label' $action $oniomarchy_found_unit1 ${oniomarchy_found_unit2:+$oniomarchy_found_unit2}; exec bash"
+  else
+    exec pkexec service-action "$action" "$oniomarchy_found_unit1" ${oniomarchy_found_unit2:+"$oniomarchy_found_unit2"}
+  fi
+}
+
+case "${1:-}" in
+  -h|--help|"") usage; exit 0 ;;
+  list) shift; cmd_list "$@" ;;
+  start|stop|restart) cmd_action "$1" "${2:-}" ;;
+  *)
+    echo "oniomarchy service: unknown verb: $1" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
+esac

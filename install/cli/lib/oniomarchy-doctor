@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+#
+# `oniomarchy doctor` — re-verify every categories.tsv/services.tsv row
+# still resolves to a real installed binary or unit, and report drift
+# (e.g. after an `omarchy update`). Runs the mirrored, already-safe-to-
+# rerun verify-binaries.sh/verify-units.sh against the mirrored
+# categories.tsv/services.tsv under /usr/local/share/oniomarchy/ (see
+# install/cli/install-scripts.sh) — no change to either verify script.
+#
+# This also refreshes the same ~/.local/state/oniomarchy/*-menu-entries.tsv
+# files `oniomarchy tool list`/`oniomarchy service list` read — doctor is
+# the CLI's way of forcing that refresh on demand.
+#
+# Issues are the verify scripts' own stderr "skipping ..." lines, not
+# re-derived — each is freeform text (four different message shapes
+# across the two scripts), so --json reports them as a "message" string
+# rather than trying to regex out a separate id/problem pair.
+
+set -euo pipefail
+
+oniomarchy_doctor_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$oniomarchy_doctor_lib/json.sh"
+
+oniomarchy_doctor_root=/usr/local/share/oniomarchy
+export ONIOMARCHY_INSTALL="$oniomarchy_doctor_root/install"
+
+oniomarchy_verify_binaries="$ONIOMARCHY_INSTALL/security/verify-binaries.sh"
+oniomarchy_verify_units="$ONIOMARCHY_INSTALL/services/verify-units.sh"
+oniomarchy_tools_tsv="$HOME/.local/state/oniomarchy/security-menu-entries.tsv"
+oniomarchy_services_tsv="$HOME/.local/state/oniomarchy/services-menu-entries.tsv"
+
+usage() {
+  cat <<'USAGE'
+Usage: oniomarchy doctor [--json]
+
+Re-verifies every categories.tsv/services.tsv row still resolves to a
+real installed binary or unit, refreshing the same generated TSVs
+`oniomarchy tool list`/`oniomarchy service list` read.
+USAGE
+}
+
+case "${1:-}" in
+  -h|--help) usage; exit 0 ;;
+esac
+as_json=0
+[[ "${1:-}" == --json ]] && as_json=1
+
+for f in "$oniomarchy_verify_binaries" "$oniomarchy_verify_units"; do
+  if [[ ! -f $f ]]; then
+    echo "oniomarchy doctor: $f not found — run install.sh first" >&2
+    exit 1
+  fi
+done
+
+# type<TAB>message pairs, captured from each verify script's stderr.
+oniomarchy_doctor_issues=()
+
+oniomarchy_doctor_capture() {
+  local type="$1" script="$2" out line
+  out="$(bash "$script" 2>&1 1>/dev/null || true)"
+  [[ -z $out ]] && return 0
+  while IFS= read -r line; do
+    [[ -z $line ]] && continue
+    line="${line#*] }"
+    oniomarchy_doctor_issues+=("$type"$'\t'"$line")
+  done <<< "$out"
+  return 0
+}
+
+oniomarchy_doctor_capture tool "$oniomarchy_verify_binaries"
+oniomarchy_doctor_capture service "$oniomarchy_verify_units"
+
+tools_checked=0
+[[ -f $oniomarchy_tools_tsv ]] && tools_checked=$(grep -c $'^ENTRY\t' "$oniomarchy_tools_tsv" || true)
+services_checked=0
+[[ -f $oniomarchy_services_tsv ]] && services_checked=$(grep -cv '^$' "$oniomarchy_services_tsv" || true)
+
+if (( as_json )); then
+  ok=true
+  (( ${#oniomarchy_doctor_issues[@]} > 0 )) && ok=false
+  printf '{"ok":%s,"tools_checked":%s,"services_checked":%s,"issues":[' "$ok" "$tools_checked" "$services_checked"
+  first=1
+  for entry in "${oniomarchy_doctor_issues[@]+"${oniomarchy_doctor_issues[@]}"}"; do
+    IFS=$'\t' read -r type message <<< "$entry"
+    (( first )) || printf ','
+    first=0
+    printf '{"type":"%s","message":"%s"}' "$(oniomarchy_json_str "$type")" "$(oniomarchy_json_str "$message")"
+  done
+  printf ']}\n'
+  exit 0
+fi
+
+echo "Checked $tools_checked tools, $services_checked services."
+if (( ${#oniomarchy_doctor_issues[@]} == 0 )); then
+  echo "No issues found."
+else
+  echo "${#oniomarchy_doctor_issues[@]} issue(s):"
+  for entry in "${oniomarchy_doctor_issues[@]}"; do
+    IFS=$'\t' read -r type message <<< "$entry"
+    printf '  [%s] %s\n' "$type" "$message"
+  done
+fi
