@@ -7,8 +7,9 @@
 # machine), not the raw package/unit name, per user request.
 # confirm: yes = gate Start/Restart behind a gum-confirm prompt in a real
 #          terminal (CLAUDE.md's confirm-before-enable rule — SSH and BeEF
-#          open remote-access attack surface); no = silent pkexec action, no
-#          terminal, matching trigger.pentest.mac-randomize.
+#          open remote-access attack surface); no = silent pkexec action,
+#          no terminal (postgresql, apache, nginx today), the same bare-
+#          pkexec pattern the rest of this trigger menu uses.
 #          Stop never confirms either way.
 #
 # verify-units.sh confirms package + each listed unit file actually exist

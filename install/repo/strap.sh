@@ -166,8 +166,8 @@ else
   # Appended at the end, which puts it after [omarchy] and after the
   # official repos. Order decides who wins a name collision, and we must
   # never win one against core/extra/multilib or against [omarchy] —
-  # publish.sh guard 3 enforces the first, and being last enforces the
-  # rest structurally rather than by convention.
+  # the packaging repo's publish.sh guard 3 enforces the first, and being
+  # last enforces the rest structurally rather than by convention.
   cat >> "$PACMAN_CONF" <<EOF
 
 [$REPO_NAME]
