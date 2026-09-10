@@ -138,6 +138,18 @@ oniomarchy_repo_has() {
 # stall is worth retrying; a build failure is not (see the retry policy).
 pkg_aur() {
   _oniomarchy_clean_build_path
+
+  # Go's linker (and makepkg's own scratch) write to $TMPDIR, which
+  # defaults to /tmp — a 2 GB tmpfs on Omarchy. Linking a large Go binary
+  # overflows it with "no space left on device" (nuclei hit this; sliver
+  # would too), even though the package itself builds in ~/.cache/yay on
+  # the roomy root filesystem. Point temp at /var/tmp, which is
+  # disk-backed and on that same filesystem. `local` scopes the export to
+  # this build — yay inherits it, the rest of the run does not — so the
+  # installer's own mktemp calls keep using /tmp as before.
+  local TMPDIR
+  export TMPDIR=/var/tmp
+
   _oniomarchy_pkg_install aur 2 "$@"
 }
 

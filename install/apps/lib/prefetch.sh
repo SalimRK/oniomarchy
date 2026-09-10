@@ -109,6 +109,38 @@ _oniomarchy_prefetch() {
       tr ' ' '\n' | grep -v '^$' | sort -u
   )
 
+  # aarch64: drop any name no configured repository actually carries.
+  #
+  # Four core leaves — reverse-engineering/ghidra, password-attacks/john,
+  # exploitation/metasploit and privacy/veracrypt — now reach their
+  # pkg_official call only through an `else` branch, because on aarch64
+  # they substitute an AUR package for a tool Arch never built for the
+  # arch. The grep above is line-based and cannot see branches, so it
+  # still collects the x86_64-only name and `pacman -Sw` still answers
+  # "error: target not found: ghidra" for it. Harmless — this whole step
+  # is non-fatal — but it lands in the first twenty lines of the log and
+  # makes a run that is working perfectly look like it is already broken.
+  #
+  # One `pacman -Slq` (every exact name in every configured sync db,
+  # ~0.3s) filters them out. Exact names only, because -Slq does not list
+  # provides: a hypothetical `pkg_official java-environment` would be
+  # dropped from the prefetch too, which costs one uncached download in
+  # the leaf that names it and can never cost a failure. And if that
+  # command gives nothing back, the list is left exactly as it was rather
+  # than silently emptied — a transient pacman failure must not turn the
+  # prefetch into a no-op. x86_64 never runs any of this.
+  if [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]]; then
+    local _known
+    if _known="$(mktemp)"; then
+      if pacman -Slq > "$_known" 2>/dev/null && [[ -s $_known ]]; then
+        mapfile -t pkgs < <(
+          printf '%s\n' "${pkgs[@]}" | grep -xF -f "$_known" || true
+        )
+      fi
+      rm -f "$_known"
+    fi
+  fi
+
   (( ${#pkgs[@]} == 0 )) && return 0
 
   echo "==> Prefetching ${#pkgs[@]} packages into the pacman cache"
