@@ -1,9 +1,9 @@
 # Security webapps for Oniomarchy's Security > Webapps menu.
 # Columns: id_slug<TAB>label<TAB>url<TAB>tactic<TAB>icon  (exactly one tab between fields)
 #
-# id_slug   - reserved for the future security.webapps.<id_slug> jsonc id
-#             once menu.sh is extended to read this file (not built yet —
-#             install-webapps.sh only uses label/url/icon today).
+# id_slug   - the security.webapps.<id_slug> jsonc menu id. menu.sh reads
+#             this file and emits one entry per row whose .desktop file
+#             actually exists; install-webapps.sh uses label/url/icon.
 # label     - passed as-is to `omarchy webapp install <label> <url> <icon>`
 #             — becomes both the .desktop filename and its Name= (and
 #             thus the launcher-visible label).
