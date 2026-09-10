@@ -97,8 +97,15 @@ _oniomarchy_prefetch() {
   # two are collected by one grep because pacman treats them identically
   # — the repository is configured by the time this runs (see
   # install/repo/enable.sh, which install.sh sources first).
+  #
+  # In the aarch64 fallback (ONIOMARCHY_AUR_FALLBACK) pkg_repo names are
+  # AUR packages, not in any sync db, so `pacman -Sw` can't prefetch them
+  # ("target not found") — collect only pkg_official there. yay downloads
+  # AUR sources at build time in each leaf.
+  local _re='official|repo'
+  [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]] && _re='official'
   mapfile -t pkgs < <(
-    grep -hoP '^\s*pkg_(official|repo)\s+\K.*' "${leaves[@]}" |
+    grep -hoP "^\s*pkg_(${_re})\s+\K.*" "${leaves[@]}" |
       tr ' ' '\n' | grep -v '^$' | sort -u
   )
 

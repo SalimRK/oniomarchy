@@ -11,6 +11,7 @@
 # but an entry here reads better and costs one line.
 declare -A ONIOMARCHY_STEP_LABELS=(
   [preflight/require-omarchy.sh]="Preflight"
+  [preflight/require-arch.sh]="Preflight · architecture"
   [repo/enable.sh]="Binary repository"
   [cli/install-scripts.sh]="CLI"
   [security/install-scripts.sh]="Security · helper scripts"

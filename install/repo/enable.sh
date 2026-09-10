@@ -28,6 +28,17 @@ oniomarchy_repo_name=oniomarchy
   exit 1
 }
 
+# aarch64: [oniomarchy] serves x86_64 only, so strap.sh's `Server =
+# $REPO_URL/$arch` would 404 on `pacman -Sy` (issue #1). There is no repo
+# to enable and nothing to record — leave ONIOMARCHY_REPO_PKGS the empty
+# file install.sh created, so oniomarchy_repo_has answers "no" for every
+# package and pkg_repo builds it from the AUR instead (see lib/pkg.sh).
+# exit 0, not return: run_step forks this step into its own process.
+if [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]]; then
+  echo "==> AUR fallback ($(uname -m)) — skipping [$oniomarchy_repo_name] (x86_64 only)"
+  exit 0
+fi
+
 # --- 1. configure the repository, unless it already is -------------------
 
 if pacman-conf --repo-list 2>/dev/null | grep -qx "$oniomarchy_repo_name"; then
