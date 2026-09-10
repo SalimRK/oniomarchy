@@ -2,3 +2,6 @@ notes/
 *.log
 Users-Log/
 CLAUDE.md
+
+# Per-machine Claude Code local settings (never commit)
+.claude/settings.local.json
