@@ -24,20 +24,29 @@
 #    the whole third-party set via gradle/support/fetchDependencies.gradle
 #    before build() compiles the tree. That is the price of there being
 #    no prebuilt aarch64 Ghidra anywhere to install instead.
-# 2/ Its prepare() runs `java --version` and aborts unless the SYSTEM
-#    DEFAULT java is 25 or newer — present is not enough. yay installs
-#    jdk-openjdk to satisfy java-environment>=25, and on a machine with
-#    no other JDK the package hook makes it the default, so a plain core
-#    run is fine. A run that also selected digital-forensics installs
-#    jdk17-openjdk first (apps/digital-forensics/autopsy.sh names it
-#    deliberately) and the first JDK installed keeps the default — which
-#    is why the message below points at archlinux-java rather than at us.
+# 2/ Its prepare() runs `java --version` and greps for 25+ — present is
+#    not enough, it reads whatever `java` resolves to on PATH. That is
+#    normally the archlinux-java default, so a run that also selected
+#    digital-forensics (autopsy.sh installs jdk17-openjdk, and the first
+#    JDK installed keeps the default) leaves `java` at 17 and the build
+#    aborts. We do NOT flip the global default — jdk17-only tools need it
+#    — we install a >=25 JDK and put it first on PATH for this one build,
+#    which is all `java --version` looks at. Installing jdk-openjdk
+#    ourselves via pkg_official (rather than leaving it to yay's makedep
+#    resolution) also gets the transfer-retry policy, since the ALARM
+#    mirror stalls on the ~140 MiB jdk download.
 #
 # ghidra-git declares provides=('ghidra'), and both `pacman -Qi` and
 # `pacman -Ql` resolve provides, so install/security/verify-binaries.sh
 # still matches the `ghidra` row in categories.tsv and the Security menu
 # comes out identical to x86_64's.
 if [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]]; then
+  # A >=25 JDK on PATH for prepare()'s `java --version`, without touching
+  # the system default. sort -V picks the newest if several are present.
+  pkg_official jdk-openjdk
+  _ghidra_jdk="$(ls -d /usr/lib/jvm/java-2[5-9]-openjdk /usr/lib/jvm/java-[3-9][0-9]-openjdk 2>/dev/null | sort -V | tail -1)"
+  [[ -n $_ghidra_jdk ]] && export PATH="$_ghidra_jdk/bin:$PATH"
+  unset _ghidra_jdk
   echo "==> ghidra-git: full source build (gradle) — expect this step to take a while"
   pkg_aur ghidra-git || {
     rc=$?
