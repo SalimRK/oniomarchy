@@ -47,6 +47,19 @@ if [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]]; then
   _ghidra_jdk="$(ls -d /usr/lib/jvm/java-2[5-9]-openjdk /usr/lib/jvm/java-[3-9][0-9]-openjdk 2>/dev/null | sort -V | tail -1)"
   [[ -n $_ghidra_jdk ]] && export PATH="$_ghidra_jdk/bin:$PATH"
   unset _ghidra_jdk
+
+  # Ghidra's PKGBUILD runs `gradle --parallel buildGhidra`, and a parallel
+  # compile of a tree this size is the heaviest memory moment in the whole
+  # toolkit — enough to trip the OOM killer on a small box (seen on a 3.8 GB
+  # aarch64 VM: the build reached :VersionTracking:compileJava, then the
+  # process tree was SIGKILLed with no abort banner). We cannot drop the
+  # PKGBUILD's `--parallel`, but gradle still honours these: no daemon (so
+  # its heap is freed at once, not held), a single worker (caps concurrent
+  # compiler forks despite --parallel), and a bounded build-JVM heap. This
+  # trades build time for a much lower peak so a constrained host can finish;
+  # it does not raise the ceiling on a host that simply lacks the RAM+swap.
+  export GRADLE_OPTS="${GRADLE_OPTS:+$GRADLE_OPTS }-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=1 -Dorg.gradle.jvmargs=-Xmx2g"
+
   echo "==> ghidra-git: full source build (gradle) — expect this step to take a while"
   pkg_aur ghidra-git || {
     rc=$?
@@ -66,6 +79,12 @@ oniomarchy: ghidra-git could not be built from the AUR.
     `sudo archlinux-java set java-26-openjdk` (or java-25-openjdk) and
     re-run; a run that also installed jdk17-openjdk for autopsy is the
     usual way this happens.
+  - the build tree stops mid-compile with no error of its own — that is
+    the OOM killer. Ghidra's `gradle --parallel buildGhidra` is the
+    heaviest step in the toolkit; this leaf already caps gradle (no daemon,
+    one worker, -Xmx2g) to survive a small box, but Ghidra from source
+    still wants roughly 4 GB of RAM+swap. Add swap (or build it on a
+    roomier host and copy the package in) and re-run.
   - a gradle fetch/compile failure — that is upstream ghidra-git, whose
     aarch64 support its maintainer flags as untested in the PKGBUILD
     itself ("Not sure aarch64 is correct here").
