@@ -27,10 +27,40 @@ fi
 
 # macarchy's own `setup` installs macchanger, the macarchy binary itself
 # to /usr/local/bin, and a polkit rule (so toggling doesn't prompt for a
-# password) — all real system changes, hence sudo. Every step inside
-# `setup` is itself check-then-install, so rerunning this leaf is safe.
-echo "==> Running macarchy setup (installs macchanger, polkit rule — needs sudo)"
-sudo "$plugin_dir/macarchy" setup
+# password) — all real system changes, but deliberately NOT under sudo,
+# unlike tormarchy.sh's otherwise identical line. macarchy's setup
+# elevates itself and *refuses* to start already-root ("don't run this
+# with sudo yourself -- run 'macarchy setup' ... and it elevates safely
+# on its own", its elevate_frozen()). The refusal is the point: $SELF at
+# setup time is still this user-writable plugin checkout, so
+# elevate_frozen() reads its own bytes while unprivileged and pipes them
+# to a fixed root bootstrap that re-executes them from a root-owned
+# copy — root never reads from a path a same-UID process could rewrite
+# mid-run. `sudo macarchy setup` would be exactly the hole that guards
+# against, so it exits non-zero, and run_step is fatal: that is what
+# aborted the whole install before this summary.
+#
+# The catch: setup/uninstall have no pkexec path (by design — the polkit
+# rule must not reach them), so elevate_frozen() insists on a terminal on
+# stdin, and ui_exec runs quiet-mode steps with stdin on /dev/null. Hand
+# it the controlling terminal explicitly. Quiet mode only happens when
+# ui_can_draw saw a tty on stdout, so /dev/tty is there; verbose mode
+# inherits our stdin, tty or not. With neither, skip with instructions
+# rather than abort — losing macchanger is not worth losing the run.
+# The sudo inside elevate_frozen won't prompt: install.sh's up-front
+# `sudo -v` plus its keepalive means the credentials are already cached.
+# Every step inside `setup` is itself check-then-install, so rerunning
+# this leaf is safe.
+echo "==> Running macarchy setup (installs macchanger, polkit rule — elevates itself, so no sudo here)"
+if [[ -t 0 ]]; then
+  "$plugin_dir/macarchy" setup
+# 2> first: redirections apply left to right, so stderr is already
+# silenced when the /dev/tty open fails and prints.
+elif : 2>/dev/null < /dev/tty; then
+  "$plugin_dir/macarchy" setup < /dev/tty
+else
+  echo "==> No terminal on stdin and no /dev/tty — macarchy setup needs one (it has no pkexec path). Run yourself: $plugin_dir/macarchy setup" >&2
+fi
 
 # Manifest's own defaultSection is "right"; moved to "center" (next to
 # tormarchy) per user request. Same IPC-availability guard
