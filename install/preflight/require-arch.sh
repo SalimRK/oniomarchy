@@ -1,12 +1,18 @@
-# [oniomarchy] publishes x86_64 signed binaries only. This does not abort
-# on aarch64 any more (issue #1 predates AUR-fallback support) — it just
-# tells the operator which mode the run is in, since a fallback run builds
-# non-official tools from the AUR and takes noticeably longer.
+# [oniomarchy] publishes x86_64 signed binaries; aarch64 builds
+# non-official tools from the AUR instead (ONIOMARCHY_AUR_FALLBACK, set in
+# install.sh). Anything else has neither path and stops here, before
+# /etc/pacman.conf is touched — the fail-fast issue #1 asked for. Runs
+# right after require-omarchy.sh, so nothing has been changed yet.
 #
-# On x86_64 (ONIOMARCHY_AUR_FALLBACK empty) this is a silent no-op. This
-# is also the single place a future hard-stop for a genuinely-unsupported
-# arch would go.
-if [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]]; then
-  echo "==> Architecture $(uname -m): [oniomarchy] is x86_64-only, so"
-  echo "    non-official tools will be built from the AUR (this is slower)."
-fi
+# On x86_64 this is a silent no-op.
+case "$(uname -m)" in
+  x86_64) ;;
+  aarch64)
+    echo "==> Architecture aarch64: [oniomarchy] is x86_64-only, so"
+    echo "    non-official tools will be built from the AUR (this is slower)."
+    ;;
+  *)
+    echo "error: unsupported architecture '$(uname -m)' — oniomarchy installs on x86_64 (signed binaries) and aarch64 (AUR builds)." >&2
+    exit 1
+    ;;
+esac
