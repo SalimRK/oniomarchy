@@ -32,7 +32,26 @@ oniomarchy_repo_require_mirror() {
   fi
 }
 
+# [oniomarchy] publishes x86_64 signed binaries only, so on any other arch
+# there is no repo to strap, sync, or remove — non-official tools came from
+# the AUR (install.sh's AUR fallback). Returns 0 (and prints the note) on
+# such a host so each verb can short-circuit; returns 1 on x86_64, where
+# the normal repo logic runs unchanged. Standalone CLI, so it reads
+# uname -m directly rather than the install-time ONIOMARCHY_AUR_FALLBACK.
+oniomarchy_repo_arch_note() {
+  [[ "$(uname -m)" == x86_64 ]] && return 1
+  cat <<EOF
+Architecture: $(uname -m)
+[oniomarchy] publishes x86_64 packages only, so the signed binary repo does
+not apply on this machine. Non-official tools were built from the AUR by
+install.sh (AUR fallback mode). Nothing to strap, sync, or remove here.
+EOF
+  return 0
+}
+
 cmd_status() {
+  oniomarchy_repo_arch_note && exit 0
+
   local configured=no keyring=no synced=no
 
   grep -q '^\[oniomarchy\]' /etc/pacman.conf 2>/dev/null && configured=yes
@@ -53,11 +72,13 @@ cmd_status() {
 }
 
 cmd_strap() {
+  oniomarchy_repo_arch_note && exit 0
   oniomarchy_repo_require_mirror
   exec sudo bash "$oniomarchy_repo_strap"
 }
 
 cmd_remove() {
+  oniomarchy_repo_arch_note && exit 0
   oniomarchy_repo_require_mirror
   exec sudo bash "$oniomarchy_repo_strap" --remove
 }

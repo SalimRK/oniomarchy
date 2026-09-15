@@ -56,6 +56,15 @@ _oniomarchy_pkg_install() {
     # PIPESTATUS because the pipe's exit code is tee's, not pacman's.
     if [[ $mode == repo ]]; then
       sudo pacman -S --needed --noconfirm "$@" 2>&1 | tee "$log"
+    elif [[ $mode == aur ]]; then
+      # --ignorearch: several AUR PKGBUILDs still declare arch=('x86_64')
+      # for what is portable source (dirb, steghide, gophish, autopsy,
+      # sleuthkit-java, eyewitness-git) — it builds on aarch64, the tag
+      # just predates it. A genuinely x86_64-only prebuilt binary has no
+      # source_aarch64 and still fails cleanly at fetch. Called directly,
+      # not via `omarchy pkg aur add`, because that wrapper can't pass
+      # makepkg flags. yay/makepkg run as the invoking user (never root).
+      yay -S --needed --noconfirm --mflags --ignorearch "$@" 2>&1 | tee "$log"
     else
       omarchy pkg add "$@" 2>&1 | tee "$log"
     fi
@@ -74,10 +83,10 @@ _oniomarchy_pkg_install() {
   rm -f "$log"
   _oniomarchy_status ""
 
-  # `omarchy pkg add` makes this check itself; the repo path has to make
-  # it too, because pacman does not always return non-zero for a target it
-  # silently did nothing about.
-  if (( rc == 0 )) && [[ $mode == repo ]]; then
+  # `omarchy pkg add` makes this check itself; the repo and aur paths call
+  # pacman/yay directly, so they have to make it too — neither reliably
+  # returns non-zero for a target it silently did nothing about.
+  if (( rc == 0 )) && [[ $mode == repo || $mode == aur ]]; then
     local pkg
     for pkg in "$@"; do
       if ! pacman -Q "$pkg" >/dev/null 2>&1; then
@@ -108,6 +117,40 @@ pkg_official() {
 oniomarchy_repo_has() {
   [[ -s ${ONIOMARCHY_REPO_PKGS:-} ]] || return 1
   grep -qxF "$1" "$ONIOMARCHY_REPO_PKGS"
+}
+
+# pkg_aur <packages...> — build from the AUR. Only reached in the aarch64
+# fallback (pkg_repo routes here when ONIOMARCHY_AUR_FALLBACK is set); on
+# x86_64 nothing calls it.
+#
+# Runs `yay` (Omarchy's shipped helper; paru is not installed) directly
+# rather than through `omarchy pkg aur add`, because that wrapper can't
+# pass the `--ignorearch` makepkg flag the fallback needs (see the aur
+# branch of _oniomarchy_pkg_install). yay runs makepkg as the invoking
+# user, and neither yay nor makepkg may run as root — so this is
+# deliberately NOT sudo, and the leaf already runs as the user. The
+# post-install `pacman -Q` check that `omarchy pkg aur add` would have
+# done is made by _oniomarchy_pkg_install for aur mode instead.
+#
+# Cleans mise out of PATH first (lib/clean-build-path.sh), exactly as the
+# pre-2026-09-06 pkg_aur did: an AUR build() must use the system toolchain,
+# not a version-manager shim. One retry — a transient AUR RPC/download
+# stall is worth retrying; a build failure is not (see the retry policy).
+pkg_aur() {
+  _oniomarchy_clean_build_path
+
+  # Go's linker (and makepkg's own scratch) write to $TMPDIR, which
+  # defaults to /tmp — a 2 GB tmpfs on Omarchy. Linking a large Go binary
+  # overflows it with "no space left on device" (nuclei hit this; sliver
+  # would too), even though the package itself builds in ~/.cache/yay on
+  # the roomy root filesystem. Point temp at /var/tmp, which is
+  # disk-backed and on that same filesystem. `local` scopes the export to
+  # this build — yay inherits it, the rest of the run does not — so the
+  # installer's own mktemp calls keep using /tmp as before.
+  local TMPDIR
+  export TMPDIR=/var/tmp
+
+  _oniomarchy_pkg_install aur 2 "$@"
 }
 
 # pkg_repo <packages...> — install prebuilt, signed binaries from
@@ -143,12 +186,25 @@ oniomarchy_repo_has() {
 # own packages, built against current Arch in a clean chroot, and it is
 # exactly what `yay -S` did here before.
 #
-# A package that [oniomarchy] does not serve fails the leaf rather than
-# being built from the AUR. That is the point: there is no silent hour of
-# compiling. In practice this only fires on drift — a leaf naming
-# something that was never published, or was dropped from the repo — and
-# it names the package so the drift is obvious rather than mysterious.
+# On x86_64 a package that [oniomarchy] does not serve fails the leaf
+# rather than being built from the AUR. That is the point: there is no
+# silent hour of compiling. In practice this only fires on drift — a leaf
+# naming something that was never published, or was dropped from the repo
+# — and it names the package so the drift is obvious rather than mysterious.
+#
+# The one exception is the aarch64 fallback (ONIOMARCHY_AUR_FALLBACK, set
+# in install.sh): [oniomarchy] has no aarch64 tree, so there every package
+# routes to pkg_aur. The blanket "no AUR" the AUR path was removed for
+# (2026-09-06) still holds on x86_64, which is the arch it was decided for.
 pkg_repo() {
+  # aarch64: no [oniomarchy] to serve these — build from the AUR instead.
+  # On x86_64 this branch is never taken and the signed-binaries-only path
+  # below is unchanged.
+  if [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]]; then
+    pkg_aur "$@"
+    return
+  fi
+
   local p
   local -a missing=()
   for p in "$@"; do

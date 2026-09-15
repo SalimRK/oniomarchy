@@ -28,6 +28,53 @@ oniomarchy_repo_name=oniomarchy
   exit 1
 }
 
+# aarch64: [oniomarchy] serves x86_64 only, so strap.sh's `Server =
+# $REPO_URL/$arch` would 404 on `pacman -Sy` (issue #1). There is no repo
+# to enable and nothing to record — leave ONIOMARCHY_REPO_PKGS the empty
+# file install.sh created, so oniomarchy_repo_has answers "no" for every
+# package and pkg_repo builds it from the AUR instead (see lib/pkg.sh).
+# exit 0, not return: run_step forks this step into its own process.
+if [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]]; then
+  echo "==> AUR fallback ($(uname -m)) — [$oniomarchy_repo_name] is x86_64-only"
+
+  # A prior x86_64-era run, or an earlier failed attempt, can leave the
+  # [oniomarchy] block in pacman.conf pointing at an aarch64 tree that
+  # 404s. That is NOT harmless: with a configured-but-unsynced repo,
+  # pacman fails every transaction with "could not find database", so
+  # official installs and yay's final `pacman -U` both break. Remove it
+  # (strap.sh --remove is the canonical, tested undo, and ends with a
+  # `pacman -Sy` that leaves the other repos synced and healthy).
+  if grep -q "^\[$oniomarchy_repo_name\]" /etc/pacman.conf 2>/dev/null; then
+    oniomarchy_strap=""
+    for oniomarchy_candidate in \
+      "${ONIOMARCHY_STRAP:-}" \
+      "$ONIOMARCHY_INSTALL/repo/strap.sh"
+    do
+      [[ -n $oniomarchy_candidate && -f $oniomarchy_candidate ]] || continue
+      oniomarchy_strap="$oniomarchy_candidate"
+      break
+    done
+    unset oniomarchy_candidate
+    if [[ -n $oniomarchy_strap ]]; then
+      echo "==> Removing the stale [$oniomarchy_repo_name] block (it cannot work on $(uname -m))"
+      sudo bash "$oniomarchy_strap" --remove
+    else
+      echo "oniomarchy: [$oniomarchy_repo_name] is configured but strap.sh is missing to remove it" >&2
+      echo "  Remove the [$oniomarchy_repo_name] block from /etc/pacman.conf by hand, then re-run." >&2
+    fi
+    unset oniomarchy_strap
+  fi
+
+  # AUR builds need the base toolchain — dirb's PKGBUILD calls `patch`,
+  # others need make/gcc/fakeroot. yay assumes base-devel is present and
+  # Omarchy does not ship all of it. Install the group directly (not via
+  # `omarchy pkg add`, whose `pacman -Q` verify can't check a group name).
+  echo "==> Ensuring base-devel for AUR builds"
+  sudo pacman -S --needed --noconfirm base-devel
+
+  exit 0
+fi
+
 # --- 1. configure the repository, unless it already is -------------------
 
 if pacman-conf --repo-list 2>/dev/null | grep -qx "$oniomarchy_repo_name"; then

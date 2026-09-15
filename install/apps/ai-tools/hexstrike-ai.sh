@@ -54,7 +54,23 @@ else
   echo "==> Installing hexstrike-ai's Python dependencies"
   # No --no-cache-dir: it buys nothing when every requirement is already
   # satisfied, and forces a re-download of anything that isn't.
-  "$_hexstrike_dir/hexstrike-env/bin/pip" install -r "$_hexstrike_dir/requirements.txt"
+  #
+  # Arch Linux ARM builds the system Python with
+  # CXX=/usr/lib/distcc/bin/g++ recorded in its sysconfig (CC stays gcc) —
+  # ALARM's own package quirk, verified in
+  # /usr/lib/python3.14/_sysconfigdata__linux_aarch64-linux-gnu.py. distcc
+  # is not installed, so any requirement carrying a C++ extension (msgpack's
+  # _cmsgpack is the one that bites) dies with
+  # "No such file or directory: '/usr/lib/distcc/bin/g++'". The venv
+  # inherits that sysconfig, and clean-build-path can't help — this is the
+  # interpreter's own compiler record, not a PATH shim. Point the build at
+  # the real compilers for this one pip run. Gated on the fallback flag so
+  # x86_64, whose sysconfig already names g++, is byte-for-byte unchanged.
+  if [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]]; then
+    CC=gcc CXX=g++ "$_hexstrike_dir/hexstrike-env/bin/pip" install -r "$_hexstrike_dir/requirements.txt"
+  else
+    "$_hexstrike_dir/hexstrike-env/bin/pip" install -r "$_hexstrike_dir/requirements.txt"
+  fi
   mkdir -p "$(dirname "$_hexstrike_stamp")"
   printf '%s\n' "$_hexstrike_head" > "$_hexstrike_stamp"
 fi

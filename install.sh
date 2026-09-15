@@ -18,6 +18,16 @@ ONIOMARCHY_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export ONIOMARCHY_PATH
 export ONIOMARCHY_INSTALL="$ONIOMARCHY_PATH/install"
 
+# [oniomarchy] publishes x86_64 signed binaries only. On any other arch
+# (today: aarch64) there is no repo to enable, so non-official tools are
+# built from the AUR instead. This one flag — set once here, exported to
+# every sourced step and forked leaf — is the switch the whole fallback
+# hangs off. Empty on x86_64, where nothing below this changes: signed
+# binaries only, no AUR.
+ONIOMARCHY_AUR_FALLBACK=""
+[[ "$(uname -m)" == x86_64 ]] || ONIOMARCHY_AUR_FALLBACK=1
+export ONIOMARCHY_AUR_FALLBACK
+
 # --- options --------------------------------------------------------------
 
 ONIOMARCHY_VERBOSE=0
