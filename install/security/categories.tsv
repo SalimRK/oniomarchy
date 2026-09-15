@@ -34,6 +34,11 @@
 #              by metasploit's own `auto` row under Exploitation Tools,
 #              also listed standalone under AI Tools) — `pkg` here is
 #              just a label, not looked up.
+#   venv     - like manual, but skipped when the binary is pacman-owned
+#              (the package's own `auto` row lists it then). For tools
+#              that are a package on x86_64 and a git+venv install on
+#              aarch64, where only the /usr/local/bin wrapper is on PATH
+#              (theHarvester, recon-ng). Produces nothing on x86_64.
 #
 # Kept in sync with notes/pentest-tools.md's Menu Tree by hand.
 nmap	infogather	auto	-
@@ -43,6 +48,8 @@ ffuf	infogather	auto	-
 dirb	infogather	auto	-
 theharvester-git	infogather	auto	-
 recon-ng	infogather	auto	-
+theharvester-venv	infogather	venv	theHarvester
+recon-ng-venv	infogather	venv	recon-ng
 sherlock	infogather	auto	-
 nikto	vuln	auto	-
 nuclei	vuln	auto	-

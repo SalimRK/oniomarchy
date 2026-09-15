@@ -41,6 +41,18 @@
 # still matches the `ghidra` row in categories.tsv and the Security menu
 # comes out identical to x86_64's.
 if [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]]; then
+  # Ghidra from source wants ~4 GiB of RAM+swap; below that the OOM killer
+  # ends a long build with no error of its own (see the failure message
+  # below). Fail this leaf now, with the reason, rather than let the run
+  # discover it the slow way. exit 1 marks the app failed in the summary;
+  # the rest of the run continues, as for any app leaf.
+  _ghidra_kb=$(awk '/^(MemTotal|SwapTotal):/ { s += $2 } END { print s+0 }' /proc/meminfo)
+  if (( _ghidra_kb < 4 * 1024 * 1024 )); then
+    echo "==> ghidra-git: $(( _ghidra_kb / 1024 )) MiB of RAM+swap, the source build needs about 4 GiB — add swap and re-run, or build on a roomier host and 'pacman -U' the package." >&2
+    exit 1
+  fi
+  unset _ghidra_kb
+
   # A >=25 JDK on PATH for prepare()'s `java --version`, without touching
   # the system default. sort -V picks the newest if several are present.
   pkg_official jdk-openjdk

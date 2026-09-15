@@ -121,6 +121,25 @@ while IFS=$'\t' read -r pkg category mode extra; do
         >> "$oniomarchy_security_generated"
       continue
       ;;
+    venv)
+      # Like manual, but skipped when the binary is pacman-owned: the
+      # package's own `auto` row lists it then, and a second entry would
+      # be a duplicate. For tools that are a package on x86_64 and a
+      # git+venv install on aarch64 (theHarvester, recon-ng — see their
+      # leaves under install/apps/information-gathering/), where the venv
+      # wrapper on /usr/local/bin is the only thing on PATH.
+      if ! venv_path=$(command -v "$extra" 2>/dev/null); then
+        echo "==> [security/verify-binaries] $pkg: '$extra' not found on PATH — skipping (venv mode never guesses)" >&2
+        continue
+      fi
+      if pacman -Qo "$venv_path" >/dev/null 2>&1; then
+        continue
+      fi
+      printf 'ENTRY\t%s\t-\t%s\t%s\t%s\t%s\n' \
+        "$category" "$extra" "$extra" "$(oniomarchy_action_for "$extra")" "$pkg" \
+        >> "$oniomarchy_security_generated"
+      continue
+      ;;
     data|collapse|auto) ;;
     *)
       echo "==> [security/verify-binaries] $pkg: unknown mode '$mode' in categories.tsv — skipping" >&2
