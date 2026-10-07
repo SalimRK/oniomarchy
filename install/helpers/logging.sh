@@ -23,6 +23,7 @@ declare -A ONIOMARCHY_STEP_LABELS=(
   [services/menu.sh]="Services menu"
   [widgets/tormarchy.sh]="Widget · tormarchy"
   [widgets/macarchy.sh]="Widget · macarchy"
+  [widgets/godark.sh]="Widget · godark"
   [trigger/menu.sh]="Trigger menu"
   [themes/install.sh]="Theme wallpapers"
   [themes/branding.sh]="Theme branding"

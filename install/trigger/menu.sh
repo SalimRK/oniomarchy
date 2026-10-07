@@ -46,6 +46,11 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
   # escape hatch. Same reasoning as dropping the archtorify menu entry
   # above: a duplicate menu action isn't worth carrying.
 
+  # Go dark (cut every radio + all networking): no trigger.pentest entry
+  # either — the third-party `godark` Omarchy plugin
+  # (install/widgets/godark.sh) is a one-click bar switch with exact
+  # restore, so a menu action would only duplicate it.
+
   # Reverse-shell listener: single entry, interactive port prompt (per
   # user decision — see notes/trigger-menu.md), rather than a few preset
   # ports. Uses ncat (from nmap, already installed) rather than the
