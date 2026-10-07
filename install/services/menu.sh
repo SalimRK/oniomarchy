@@ -1,5 +1,8 @@
 echo "==> Building Trigger > Pentest > Services menu..."
 
+# shellcheck source=../helpers/menu-merge.sh
+source "$ONIOMARCHY_INSTALL/helpers/menu-merge.sh"
+
 oniomarchy_menu_jsonc="$HOME/.config/omarchy/extensions/omarchy-menu.jsonc"
 oniomarchy_services_generated="$HOME/.local/state/oniomarchy/services-menu-entries.tsv"
 
@@ -84,22 +87,9 @@ trap 'rm -f "$oniomarchy_block_file"' RETURN
   echo "  // END oniomarchy services menu"
 } > "$oniomarchy_block_file"
 
-oniomarchy_merged=$(mktemp)
-awk -v blockfile="$oniomarchy_block_file" '
-  BEGIN {
-    in_block = 0
-    while ((getline line < blockfile) > 0) block = block line "\n"
-  }
-  /\/\/ BEGIN oniomarchy services menu/ { in_block = 1; next }
-  /\/\/ END oniomarchy services menu/ { in_block = 0; next }
-  in_block { next }
-  /^}[[:space:]]*$/ && !inserted {
-    printf "%s", block
-    inserted = 1
-  }
-  { print }
-' "$oniomarchy_menu_jsonc" > "$oniomarchy_merged"
-
-mv "$oniomarchy_merged" "$oniomarchy_menu_jsonc"
+# Comma repair, validation and backup all live in the shared helper —
+# see install/helpers/menu-merge.sh (issue #4).
+oniomarchy_merge_menu_block services "$oniomarchy_block_file" "$oniomarchy_menu_jsonc" \
+  || { return 1 2>/dev/null || exit 1; }
 
 echo "==> Services menu written to $oniomarchy_menu_jsonc"

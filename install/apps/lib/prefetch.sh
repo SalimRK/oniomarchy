@@ -104,12 +104,24 @@ _oniomarchy_prefetch() {
   # AUR sources at build time in each leaf.
   local _re='official|repo'
   [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]] && _re='official'
+  #
+  # The grep keeps the rest of the line, so a call written as
+  # `pkg_repo sliver || {` would hand pacman `||` and `{` as package names
+  # — and `pacman -Sw` rejects the whole transaction over one unknown
+  # target, so the prefetch silently fetched nothing (issue #4). The sed
+  # cuts each line at the first shell token: `|`, `&`, `;`, `{`, `(`, `>`,
+  # `<` or a comment.
   mapfile -t pkgs < <(
     grep -hoP "^\s*pkg_(${_re})\s+\K.*" "${leaves[@]}" |
+      sed -E 's/[|&;{(<>#].*//' |
       tr ' ' '\n' | grep -v '^$' | sort -u
   )
 
-  # aarch64: drop any name no configured repository actually carries.
+  # Drop any name no configured repository actually carries — on every
+  # architecture, not just aarch64. Until issue #4 this ran only under the
+  # fallback, so on x86_64 a single stray name still sank the whole step.
+  # x86_64 has the same kind of stray: caido.sh's aarch64-only
+  # `pkg_repo caido-cli`, which the grep collects regardless of branch.
   #
   # Four core leaves — reverse-engineering/ghidra, password-attacks/john,
   # exploitation/metasploit and privacy/veracrypt — now reach their
@@ -128,17 +140,15 @@ _oniomarchy_prefetch() {
   # the leaf that names it and can never cost a failure. And if that
   # command gives nothing back, the list is left exactly as it was rather
   # than silently emptied — a transient pacman failure must not turn the
-  # prefetch into a no-op. x86_64 never runs any of this.
-  if [[ -n ${ONIOMARCHY_AUR_FALLBACK:-} ]]; then
-    local _known
-    if _known="$(mktemp)"; then
-      if pacman -Slq > "$_known" 2>/dev/null && [[ -s $_known ]]; then
-        mapfile -t pkgs < <(
-          printf '%s\n' "${pkgs[@]}" | grep -xF -f "$_known" || true
-        )
-      fi
-      rm -f "$_known"
+  # prefetch into a no-op.
+  local _known
+  if _known="$(mktemp)"; then
+    if pacman -Slq > "$_known" 2>/dev/null && [[ -s $_known ]]; then
+      mapfile -t pkgs < <(
+        printf '%s\n' "${pkgs[@]}" | grep -xF -f "$_known" || true
+      )
     fi
+    rm -f "$_known"
   fi
 
   (( ${#pkgs[@]} == 0 )) && return 0
