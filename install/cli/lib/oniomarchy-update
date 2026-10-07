@@ -31,13 +31,12 @@ export GIT_TERMINAL_PROMPT=0
 
 usage() {
   cat <<'USAGE'
-Usage: oniomarchy update [--yes] [--no-plugins] [--verbose] [--log PATH | --no-log]
+Usage: oniomarchy update [--no-plugins] [--verbose] [--log PATH | --no-log]
 
 Pulls the latest Oniomarchy, updates the tormarchy/macarchy/godark
 plugins, and re-runs the installer if anything changed. Package
 upgrades come from `omarchy update`, which also runs this automatically.
 
-  --yes         update plugins without showing their changes first
   --no-plugins  leave plugins alone
   --verbose, --log PATH, --no-log
                 passed on to install.sh
@@ -49,13 +48,11 @@ fail() {
   exit 1
 }
 
-oniomarchy_update_yes=0
 oniomarchy_update_plugins=1
 oniomarchy_update_installer_args=()
 
 while (( $# )); do
   case "$1" in
-    -y|--yes)     oniomarchy_update_yes=1 ;;
     --no-plugins) oniomarchy_update_plugins=0 ;;
     -v|--verbose) oniomarchy_update_installer_args+=(--verbose) ;;
     --log)        [[ $# -ge 2 ]] || fail "--log needs a path"
@@ -120,15 +117,18 @@ if (( oniomarchy_update_plugins )); then
     [[ -d $dir/.git ]] || continue
 
     before=$(git -C "$dir" rev-parse HEAD)
-    # Without --yes, omarchy shows the diff and asks — tormarchy is
-    # third-party and its setup runs as root on every install, so new
-    # code there gets a look by default.
-    if (( oniomarchy_update_yes )); then
-      omarchy plugin update "$id" --yes || echo "oniomarchy update: could not update plugin $id — carrying on" >&2
-    else
-      omarchy plugin update "$id" || echo "oniomarchy update: could not update plugin $id — carrying on" >&2
+    # Always --yes. Without it omarchy shows the full diff in a pager and
+    # then asks — tested 2026-10-08, and a bare `:` at the bottom of the
+    # screen left even this project's maintainer unsure what to do. A
+    # review step most people answer blind adds no safety, so plugins
+    # update the way packages do, and the new commits are listed instead.
+    omarchy plugin update "$id" --yes ||
+      echo "oniomarchy update: could not update plugin $id — carrying on" >&2
+    after=$(git -C "$dir" rev-parse HEAD)
+    if [[ $after != "$before" ]]; then
+      plugin_changed=1
+      git -C "$dir" log --oneline --no-decorate "$before..$after" | sed 's/^/    /'
     fi
-    [[ $(git -C "$dir" rev-parse HEAD) == "$before" ]] || plugin_changed=1
   done
 fi
 

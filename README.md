@@ -91,10 +91,8 @@ Updates come from Oniomarchy's own copy of the repository in
 `~/.local/share/oniomarchy/repo`, so it doesn't matter where you cloned
 it to install, or whether you still have that clone.
 
-The bar plugins update the same way, but they show you what changed and
-ask first, since the Tor plugin's setup runs as root. Under
-`omarchy update -y`, where nobody is there to answer, plugins are left
-alone; run `oniomarchy update` to review them.
+The bar plugins (Tor, MAC, GoDark) update in the same pass, with no
+questions; their new changes are listed as they land.
 
 `oniomarchy update` also works on its own, without a system update.
 To turn the hook off (for example on a machine where you develop
