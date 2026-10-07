@@ -1,4 +1,4 @@
-# No hook leaves yet. The originally-suspected need — re-applying
+# No hook for the menus. The originally-suspected need — re-applying
 # security/webapps/trigger menu jsonc after `omarchy update`/`omarchy
 # refresh shell` wipes ~/.config/omarchy/extensions/omarchy-menu.jsonc —
 # was checked against the real Omarchy source (2026-08-26) and does NOT
@@ -19,8 +19,12 @@
 # resetting configs when they run either one; rerunning this repo's own
 # install.sh afterward is the natural recovery, same as today.
 #
-# So: no real need identified yet. If a future Omarchy version adds a
-# migration that does touch the extensions file, or another real
-# system-event need for a hook turns up, register it via `omarchy hook
-# install <event> <script>` (never edit packaged files directly) and add
-# `run_step "$ONIOMARCHY_INSTALL/hooks/<name>.sh"` lines here.
+# So no menu hook. If a future Omarchy version adds a migration that does
+# touch the extensions file, register one via `omarchy hook install
+# <event> <script>` (never edit packaged files directly).
+#
+# The one hook that IS warranted (2026-10-08) does a different job:
+# post-update runs `oniomarchy update`, so a plain `omarchy update` also
+# pulls new Oniomarchy releases and plugin updates. See
+# notes/oniomarchy-update.md.
+run_step "$ONIOMARCHY_INSTALL/hooks/install.sh"

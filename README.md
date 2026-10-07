@@ -60,8 +60,11 @@ What it changes on your machine:
 3. Installs the curated default tool set — 56 of the 86 available.
 4. Merges its menu entries into
    `~/.config/omarchy/extensions/omarchy-menu.jsonc`.
-5. Installs the Tor and MAC-randomization bar plugins, the per-theme
-   wallpapers, and the oni branding.
+5. Installs the Tor, MAC-randomization and GoDark (cut every radio and
+   network link) bar plugins, the per-theme wallpapers, and the oni
+   branding.
+6. Adds a post-update hook so `omarchy update` keeps Oniomarchy current
+   too — see [Updating](#updating).
 
 Every run writes a full log to
 `~/.local/state/oniomarchy/install-<timestamp>.log`, with a `latest.log`
@@ -70,6 +73,35 @@ symlink beside it — in both quiet and verbose mode, always.
 ```bash
 ./install.sh --verbose   # show every package manager line as it happens
 ./install.sh --help      # all options, including --log and --no-log
+```
+
+## Updating
+
+```bash
+omarchy update
+```
+
+That's all. Omarchy's update upgrades every package, including the
+tools from `[oniomarchy]`, and then runs Oniomarchy's hook, which pulls
+the latest Oniomarchy and re-runs the installer if anything changed —
+new tools, menu entries, widgets or art. When nothing changed it adds
+about a second.
+
+Updates come from Oniomarchy's own copy of the repository in
+`~/.local/share/oniomarchy/repo`, so it doesn't matter where you cloned
+it to install, or whether you still have that clone.
+
+The bar plugins update the same way, but they show you what changed and
+ask first, since the Tor plugin's setup runs as root. Under
+`omarchy update -y`, where nobody is there to answer, plugins are left
+alone; run `oniomarchy update` to review them.
+
+`oniomarchy update` also works on its own, without a system update.
+To turn the hook off (for example on a machine where you develop
+Oniomarchy and want to install from your own checkout):
+
+```bash
+mkdir -p ~/.config/oniomarchy && touch ~/.config/oniomarchy/no-auto-update
 ```
 
 ## Packs
@@ -156,6 +188,7 @@ oniomarchy net       revshell, http-server, linpeas, winpeas, proxy-trust, remmi
 oniomarchy repo      [oniomarchy] repo status / strap / remove
 oniomarchy branding  install / reset the oni art
 oniomarchy doctor    re-verify every tool and service still resolves
+oniomarchy update    pull the latest Oniomarchy and plugins, re-run the installer
 ```
 
 `tool list`, `service list` and `doctor` all take `--json`. Run
@@ -169,6 +202,8 @@ oniomarchy doctor    re-verify every tool and service still resolves
 | Wallpapers | `~/.config/omarchy/backgrounds/<theme>/` |
 | Branding art | `~/.config/omarchy/branding/` |
 | Logs and state | `~/.local/state/oniomarchy/` |
+| Update copy of the repo | `~/.local/share/oniomarchy/repo` |
+| Post-update hook | `~/.config/omarchy/hooks/post-update.d/oniomarchy-update.hook` |
 | The CLI | `/usr/local/bin/oniomarchy` |
 
 Menu entries are merged between `BEGIN`/`END` markers, so re-running the

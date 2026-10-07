@@ -6,7 +6,7 @@
 # name comes from the table below rather than from a second argument, for
 # the same reason.
 
-# Display names for the 14 non-app steps. A path not listed here falls
+# Display names for the non-app steps. A path not listed here falls
 # back to a name derived from the path, so a new leaf is never nameless —
 # but an entry here reads better and costs one line.
 declare -A ONIOMARCHY_STEP_LABELS=(
@@ -21,6 +21,7 @@ declare -A ONIOMARCHY_STEP_LABELS=(
   [services/verify-units.sh]="Services · verify units"
   [services/install-scripts.sh]="Services · helper scripts"
   [services/menu.sh]="Services menu"
+  [hooks/install.sh]="Hook · oniomarchy update"
   [widgets/tormarchy.sh]="Widget · tormarchy"
   [widgets/macarchy.sh]="Widget · macarchy"
   [widgets/godark.sh]="Widget · godark"

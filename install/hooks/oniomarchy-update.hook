@@ -1,0 +1,33 @@
+# Oniomarchy post-update hook — installed by install/hooks/install.sh
+# into ~/.config/omarchy/hooks/post-update.d/, so `omarchy update` keeps
+# Oniomarchy current too. Runs right after Omarchy's package upgrade.
+# Design: notes/oniomarchy-update.md in the Oniomarchy repo.
+#
+# Every path out of here that isn't a real update exits 0: omarchy-hook
+# only prints "Hook failed" for a non-zero exit and carries on, so a
+# failure here must be one that means something.
+
+echo -e "\e[32m\nUpdate Oniomarchy\e[0m"
+
+# For a machine that develops Oniomarchy, where what's installed should
+# come from the working checkout rather than the published branch.
+if [[ -e $HOME/.config/oniomarchy/no-auto-update ]]; then
+  echo "Skipped: $HOME/.config/oniomarchy/no-auto-update exists."
+  exit 0
+fi
+
+if ! command -v oniomarchy >/dev/null 2>&1; then
+  echo "Skipped: the oniomarchy command isn't installed."
+  exit 0
+fi
+
+args=()
+# `omarchy update -y` promises nobody is there to answer. Plugin updates
+# show a diff and ask, and tormarchy's new code runs as root, so they
+# wait for a person instead of going through blind.
+if [[ -n ${OMARCHY_UPDATE_UNATTENDED:-} ]]; then
+  args+=(--no-plugins)
+  echo "Unattended: plugins left alone — run 'oniomarchy update' to review plugin updates."
+fi
+
+ONIOMARCHY_UPDATE_FROM_HOOK=1 exec oniomarchy update "${args[@]}"

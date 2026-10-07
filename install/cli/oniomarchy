@@ -27,6 +27,7 @@ Groups:
   repo       [oniomarchy] binary repo status/strap/remove
   branding   install/reset the oni branding assets
   doctor     verify installed tools/services still resolve, report drift
+  update     pull the latest Oniomarchy and plugins, re-run the installer
 
 Run `oniomarchy <group> --help` for a group's own subcommands.
 USAGE
@@ -42,7 +43,7 @@ case "$1" in
     usage
     exit 0
     ;;
-  tool|service|net|repo|branding|doctor)
+  tool|service|net|repo|branding|doctor|update)
     group="$1"
     shift
     exec "$oniomarchy_cli_lib/oniomarchy-$group" "$@"

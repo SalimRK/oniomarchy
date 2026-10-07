@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+#
+# `oniomarchy update` — bring an installed Oniomarchy up to date: pull
+# the repo, update the plugins this repo installs, and re-run install.sh
+# when either changed. Also what install/hooks/oniomarchy-update.hook
+# calls from inside `omarchy update`. Design: notes/oniomarchy-update.md.
+#
+# Updates always come from a clone this command owns, never from the one
+# the user first ran install.sh from: users delete that download, edit
+# it, or (on a developer's machine) have work in progress in it. Nobody
+# edits this copy, so it should always fast-forward, and when it is
+# missing it is simply cloned again.
+#
+# Package upgrades are not done here — `omarchy update` does those, with
+# its own confirm, snapshot and restart steps.
+
+set -euo pipefail
+
+# Overridable only so the tests can point at a local bare repo.
+oniomarchy_update_url="${ONIOMARCHY_UPDATE_URL:-https://github.com/SalimRK/oniomarchy.git}"
+oniomarchy_update_repo="${ONIOMARCHY_UPDATE_REPO:-$HOME/.local/share/oniomarchy/repo}"
+
+# Written by install.sh at the end of every completed run.
+oniomarchy_update_state="$HOME/.local/state/oniomarchy"
+oniomarchy_update_stamp="$oniomarchy_update_state/installed-commit"
+oniomarchy_update_packs="$oniomarchy_update_state/installed-packs"
+
+# A fetch that needs credentials must fail, not sit waiting on a prompt
+# inside `omarchy update`.
+export GIT_TERMINAL_PROMPT=0
+
+usage() {
+  cat <<'USAGE'
+Usage: oniomarchy update [--yes] [--no-plugins] [--verbose] [--log PATH | --no-log]
+
+Pulls the latest Oniomarchy, updates the tormarchy/macarchy/godark
+plugins, and re-runs the installer if anything changed. Package
+upgrades come from `omarchy update`, which also runs this automatically.
+
+  --yes         update plugins without showing their changes first
+  --no-plugins  leave plugins alone
+  --verbose, --log PATH, --no-log
+                passed on to install.sh
+USAGE
+}
+
+fail() {
+  echo "oniomarchy update: $*" >&2
+  exit 1
+}
+
+oniomarchy_update_yes=0
+oniomarchy_update_plugins=1
+oniomarchy_update_installer_args=()
+
+while (( $# )); do
+  case "$1" in
+    -y|--yes)     oniomarchy_update_yes=1 ;;
+    --no-plugins) oniomarchy_update_plugins=0 ;;
+    -v|--verbose) oniomarchy_update_installer_args+=(--verbose) ;;
+    --log)        [[ $# -ge 2 ]] || fail "--log needs a path"
+                  oniomarchy_update_installer_args+=(--log "$2"); shift ;;
+    --log=*)      oniomarchy_update_installer_args+=("$1") ;;
+    --no-log)     oniomarchy_update_installer_args+=(--no-log) ;;
+    -h|--help)    usage; exit 0 ;;
+    *)            echo "oniomarchy update: unknown option: $1" >&2; echo >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+repo="$oniomarchy_update_repo"
+
+# --- 1-2. the clone --------------------------------------------------------
+
+if [[ ! -d $repo/.git ]]; then
+  [[ ! -e $repo ]] || fail "$repo exists but is not a git clone — move it aside and re-run"
+  echo "==> Cloning Oniomarchy into $repo"
+  mkdir -p "$(dirname "$repo")"
+  git clone --quiet "$oniomarchy_update_url" "$repo" || fail "could not clone $oniomarchy_update_url"
+else
+  # Refuse rather than stash or reset: this copy is never edited, so
+  # changes in it are a surprise worth a human look.
+  if [[ -n $(git -C "$repo" status --porcelain) ]]; then
+    fail "$repo has local changes. It is managed by 'oniomarchy update' and isn't meant to be edited — delete it and re-run to get a fresh copy."
+  fi
+  echo "==> Pulling Oniomarchy"
+  git -C "$repo" -c advice.diverging=false pull --ff-only --quiet ||
+    fail "could not fast-forward $repo — delete it and re-run to get a fresh copy"
+fi
+
+head=$(git -C "$repo" rev-parse HEAD)
+installed=$(cat "$oniomarchy_update_stamp" 2>/dev/null || true)
+
+repo_changed=0
+if [[ $head != "$installed" ]]; then
+  repo_changed=1
+  if [[ -n $installed ]] && git -C "$repo" merge-base --is-ancestor "$installed" HEAD 2>/dev/null; then
+    echo "==> New since your last install:"
+    git -C "$repo" log --oneline --no-decorate "$installed..HEAD" | sed 's/^/    /'
+  elif [[ -n $installed ]]; then
+    # Installed from a commit this clone doesn't have — e.g. unpushed
+    # work in a developer's own checkout.
+    echo "==> Installed commit ${installed:0:7} isn't on the published branch; reinstalling at ${head:0:7}"
+  else
+    echo "==> No record of a previous install; installing at ${head:0:7}"
+  fi
+fi
+
+# --- 3. plugins ------------------------------------------------------------
+
+# Ids come from the freshly pulled widget leaves, so a plugin added to
+# the repo is covered without a second list. Only plugins that are
+# already installed are updated; a new one is installed by install.sh.
+plugin_changed=0
+if (( oniomarchy_update_plugins )); then
+  for leaf in "$repo"/install/widgets/*.sh; do
+    id=$(sed -n 's/^plugin_id="\(.*\)"$/\1/p' "$leaf")
+    [[ -n $id ]] || continue
+    dir="$HOME/.config/omarchy/plugins/$id"
+    [[ -d $dir/.git ]] || continue
+
+    before=$(git -C "$dir" rev-parse HEAD)
+    # Without --yes, omarchy shows the diff and asks — tormarchy is
+    # third-party and its setup runs as root on every install, so new
+    # code there gets a look by default.
+    if (( oniomarchy_update_yes )); then
+      omarchy plugin update "$id" --yes || echo "oniomarchy update: could not update plugin $id — carrying on" >&2
+    else
+      omarchy plugin update "$id" || echo "oniomarchy update: could not update plugin $id — carrying on" >&2
+    fi
+    [[ $(git -C "$dir" rev-parse HEAD) == "$before" ]] || plugin_changed=1
+  done
+fi
+
+# --- 4. the installer ------------------------------------------------------
+
+if (( ! repo_changed && ! plugin_changed )); then
+  echo "==> Oniomarchy is up to date (${head:0:7})"
+  [[ -n ${ONIOMARCHY_UPDATE_FROM_HOOK:-} ]] ||
+    echo "    Package upgrades come from 'omarchy update'."
+  exit 0
+fi
+
+# Re-run with the packs earlier installs chose; a bare run would fall
+# back to core and miss new tools in a pack the user picked. Checked
+# against the pulled tree's own pack list first: a pack renamed or
+# removed upstream would otherwise make install.sh exit "unknown pack"
+# on every update from now on.
+if [[ -s $oniomarchy_update_packs ]]; then
+  ONIOMARCHY_APPS="$repo/install/apps" source "$repo/install/apps/lib/packs.sh"
+  while IFS= read -r pack; do
+    [[ -n $pack ]] || continue
+    if oniomarchy_pack_valid_name "$pack"; then
+      oniomarchy_update_installer_args+=(--pack "$pack")
+    else
+      echo "==> Pack '$pack' no longer exists — skipping it"
+    fi
+  done < "$oniomarchy_update_packs"
+fi
+
+# exec, and as the very last thing: install.sh reinstalls this script
+# (install/cli/install-scripts.sh), and bash reads a script as it runs
+# it, so this file must not still be executing when that happens.
+echo "==> Running the installer"
+exec "$repo/install.sh" "${oniomarchy_update_installer_args[@]}"

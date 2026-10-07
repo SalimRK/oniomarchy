@@ -248,6 +248,28 @@ if [[ -n ${ONIOMARCHY_APPS_FAILED:-} ]]; then
   _oniomarchy_failed_count=$#
 fi
 
+# Record what this run installed, for `oniomarchy update`: it re-runs
+# the installer only when its clone's HEAD differs from this commit, and
+# with these packs, so a user who chose `--pack all` keeps getting new
+# tools from it. Packs accumulate rather than replace — installing core
+# and later `--pack sdr` means both are installed, and an update should
+# keep both current. Written whenever the run gets this far, app failures
+# included (the summary below reports those); a run that aborted earlier
+# writes nothing, so the next update retries it. The .git test is not
+# redundant: `git -C` walks up, so a tarball unpacked inside some other
+# repo would otherwise record that repo's commit. See
+# notes/oniomarchy-update.md.
+_oniomarchy_state="$HOME/.local/state/oniomarchy"
+if [[ -e $ONIOMARCHY_PATH/.git ]] &&
+   _oniomarchy_commit=$(git -C "$ONIOMARCHY_PATH" rev-parse HEAD 2>/dev/null); then
+  mkdir -p "$_oniomarchy_state"
+  printf '%s\n' "$_oniomarchy_commit" > "$_oniomarchy_state/installed-commit"
+  { cat "$_oniomarchy_state/installed-packs" 2>/dev/null || true
+    printf '%s\n' "${ONIOMARCHY_PACK_ARGS[@]}"
+  } | sort -u > "$_oniomarchy_state/installed-packs.new"
+  mv "$_oniomarchy_state/installed-packs.new" "$_oniomarchy_state/installed-packs"
+fi
+
 _oniomarchy_reached_summary=1
 ui_summary \
   "${ONIOMARCHY_APPS_OK:-0}" \

@@ -1,7 +1,7 @@
 echo "==> Installing oniomarchy CLI"
 
 sudo install -Dm755 "$ONIOMARCHY_INSTALL/cli/oniomarchy" /usr/local/bin/oniomarchy
-for g in tool service net repo branding doctor; do
+for g in tool service net repo branding doctor update; do
   sudo install -Dm755 "$ONIOMARCHY_INSTALL/cli/lib/oniomarchy-$g" "/usr/local/lib/oniomarchy/oniomarchy-$g"
 done
 sudo install -Dm644 "$ONIOMARCHY_INSTALL/cli/lib/json.sh" /usr/local/lib/oniomarchy/json.sh
